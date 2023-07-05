@@ -12,11 +12,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringJoiner;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.vo.anno.ZRead;
 import com.vo.anno.ZWrite;
@@ -214,6 +216,33 @@ public class ZRMain {
 // FIXME 2023年6月16日 上午10:59:52 zhanghen: 自己写一个aop
 
 	}
+
+	public static Map<Class, ZClass> generateClassForZRSubinterfaceMap(final Set<Class<?>> zrSubclassSet) {
+
+		LOG.info("开始给[{}]的子接口生成实现类", ZRepository.class.getCanonicalName());
+
+		final Map<Class, ZClass> map = Maps.newConcurrentMap();
+
+		final Set<ZClass> zrsubIZClass = Sets.newHashSet();
+		for (final Class<?> cls : zrSubclassSet) {
+			LOG.info("开始给[{}]的子接口[{}]生成实现类", ZRepository.class.getCanonicalName(), cls.getCanonicalName());
+			final String canonicalName = cls.getCanonicalName();
+//			System.out.println("canonicalName = \n\n" + canonicalName);
+
+			final ZClass generateZRepositorySubclass = generateMyZRepositorySubclass(canonicalName, cls);
+			LOG.info("给[{}]的子接口[{}]生成实现类完成,className={},class=\n\n{}", ZRepository.class.getCanonicalName(),
+					cls.getCanonicalName(), generateZRepositorySubclass.getName(),
+					generateZRepositorySubclass.toString());
+
+			zrsubIZClass.add(generateZRepositorySubclass);
+			map.put(cls, generateZRepositorySubclass);
+//			final Object newInstance = generateZRepositorySubclass.newInstance();
+//			System.out.println("generateZRepositorySubclass-newInstance = \n\n" + newInstance);
+		}
+
+		return map;
+	}
+
 	public static Set<ZClass> generateClassForZRSubinterface(final Set<Class<?>> zrSubclassSet) {
 
 
