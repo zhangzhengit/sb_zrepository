@@ -40,10 +40,10 @@ public class SU {
 
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
-
+		PreparedStatement ps =null;
 		try {
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}]", s);
@@ -57,6 +57,11 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return false;
@@ -65,10 +70,10 @@ public class SU {
 	public static <T> boolean deleteById(final Mode mode, final Object id, final Class<T> cls, final String sql) {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
-
+		PreparedStatement ps = null;
 		try {
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps= connection.prepareStatement(s);
 			ps.setObject(1, id);
 
 			if (ZDP.getShowSql()) {
@@ -83,6 +88,11 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return false;
@@ -93,16 +103,18 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 			ps.setObject(1, id);
 
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}],[{}]", s,id);
 			}
 
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 			if (rs.next()) {
 				final int count = rs.getInt(1);
 				return count >= 1;
@@ -112,6 +124,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return false;
@@ -123,12 +141,14 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		final String sql = generateSaveAllSQL(cls, sqlParam);
+
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			connection.setAutoCommit(false);
 
-			final String sql = generateSaveAllSQL(cls, sqlParam);
-
-			final PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+			ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
 			if (ZDP.getShowSql()) {
 				final ArrayList<ArrayList<Object>> p0 = Lists.newArrayList();
@@ -161,14 +181,12 @@ public class SU {
 
 			ps.executeBatch();
 
-			final ResultSet rs = ps.getGeneratedKeys();
+			rs = ps.getGeneratedKeys();
 			final List<Object> r = new ArrayList<>();
 			while (rs.next()) {
 				final Object id = rs.getObject(1);
 				r.add(id);
 			}
-			ps.clearBatch();
-
 			return r;
 
 		} catch (final Exception e) {
@@ -182,6 +200,9 @@ public class SU {
 		} finally {
 			try {
 				connection.commit();
+				ps.clearBatch();
+				rs.close();
+				ps.close();
 				instance.returnZConnection(zc);
 			} catch (final SQLException e) {
 				e.printStackTrace();
@@ -208,20 +229,18 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
-		final String sql2 = gSaveSql(cls, t, sql);
-
+		Statement statement =null;
+		ResultSet rs = null;
 		try {
+			final String sql2 = gSaveSql(cls, t, sql);
 			final String s = sql2;
-			final Statement statement = connection.createStatement();
-			final long t1 = System.currentTimeMillis();
+			statement = connection.createStatement();
 			final int executeUpdate = statement.executeUpdate(s, Statement.RETURN_GENERATED_KEYS);
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}],[{}]", sql, t);
 			}
-			final long t2 = System.currentTimeMillis();
-			save_MS.set(save_MS.get() + (t2-t1));
 
-			final ResultSet rs = statement.getGeneratedKeys();
+			rs = statement.getGeneratedKeys();
 			if (rs.next()) {
 				final Object id = rs.getObject(1);
 				return id;
@@ -230,6 +249,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				statement.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -277,15 +302,17 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			// "select * from user where id = ?"
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}]", sql);
 			}
 
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
@@ -312,6 +339,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -331,37 +364,31 @@ public class SU {
 	}
 
 
-
 	public static AtomicLong findByID_MS = new AtomicLong();
 	public static AtomicLong findByID__NEWT_MS = new AtomicLong();
 	public static <T> T findById(final Mode mode, final Object id, final Class<T> cls, final String sql) {
 
-		final long t1 = System.currentTimeMillis();
 		final ZConnection zc = instance.getZConnection(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 			ps.setObject(1, id);
 
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}],[{}]", s, id);
 			}
 
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
 			if (rs.next()) {
 				final int count = metaData.getColumnCount();
-				final long t11 = System.currentTimeMillis();
 				final T t = newT(cls, rs, metaData, count);
-				final long t22 = System.currentTimeMillis();
-				findByID__NEWT_MS.set(findByID__NEWT_MS.get() + (t22-t11));
-				final long t2 = System.currentTimeMillis();
-
-				findByID_MS.set(findByID_MS.get() + (t2 - t1));
 				return t;
 			}
 
@@ -370,6 +397,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -394,10 +427,12 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			// "select * from user where id = ?"
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 
 			int i = 1;
 			for (final Object object : fieldArray) {
@@ -409,7 +444,7 @@ public class SU {
 				LOG.info("[{}],[{}]", s, Arrays.toString(fieldArray));
 			}
 
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
@@ -426,6 +461,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -436,17 +477,19 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			// "select * from user where id = ?"
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 			ps.setObject(1, fieldValue);
 
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}],[{}]", s, fieldValue);
 			}
 
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
@@ -463,6 +506,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -473,9 +522,11 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		Statement statement = null;
+		ResultSet rs = null;
 		try {
 			// "select * from user where id = ?"
-			final Statement statement = connection.createStatement();
+			statement = connection.createStatement();
 
 			String s = sql;
 			for (final Object object : fieldArray) {
@@ -504,7 +555,7 @@ public class SU {
 				LOG.info("[{}]", s);
 			}
 
-			final ResultSet rs = statement.executeQuery(s);
+			rs = statement.executeQuery(s);
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
@@ -521,6 +572,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				statement.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -531,10 +588,12 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			// "select * from user where id = ?"
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 			ps.setObject(1, field);
 
 
@@ -542,8 +601,7 @@ public class SU {
 				LOG.info("[{}],[{}]", s, field);
 			}
 
-
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
@@ -560,6 +618,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -570,17 +634,19 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			// "select * from user where id = ?"
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 			ps.setObject(1, "%" + field);
 
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}],[{}]", s, "%" + field);
 			}
 
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
@@ -597,6 +663,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -606,17 +678,19 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			// "select * from user where id = ?"
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 			ps.setObject(1, field + "%");
 
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}],[{}]", s, field + "%");
 			}
 
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
@@ -633,6 +707,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -642,17 +722,19 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			// "select * from user where id = ?"
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 			ps.setObject(1, "%" + field + "%");
 
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}],[{}]", s, "%" + field + "%");
 			}
 
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
@@ -669,6 +751,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -679,17 +767,18 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			// "select * from user where id = ?"
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}]", s);
 			}
 
-
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
@@ -706,6 +795,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -716,15 +811,17 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}]", s);
 			}
 
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			if (rs.next()) {
 				final Long count = rs.getLong(1);
@@ -735,6 +832,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -745,16 +848,18 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 			ps.setObject(1, field);
 
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}],[{}]", s, field);
 			}
 
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
@@ -767,6 +872,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
@@ -777,9 +888,11 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			final String s = sql;
-			final PreparedStatement ps = connection.prepareStatement(s);
+			ps = connection.prepareStatement(s);
 			int i = 1;
 			for (final Object object : field) {
 				ps.setObject(i, object);
@@ -790,8 +903,7 @@ public class SU {
 				LOG.info("[{}],[{}]", s, Arrays.toString(field));
 			}
 
-
-			final ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			final ResultSetMetaData metaData = rs.getMetaData();
 
@@ -808,6 +920,12 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return null;
