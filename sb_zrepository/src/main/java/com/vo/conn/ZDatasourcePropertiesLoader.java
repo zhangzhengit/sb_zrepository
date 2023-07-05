@@ -66,6 +66,8 @@ public class ZDatasourcePropertiesLoader {
 		final boolean showSql = gs().getBoolean("datasource.showsql");
 		if (showSql) {
 			zDatasourceProperties.setShowSql(true);
+		} else {
+			zDatasourceProperties.setShowSql(false);
 		}
 
 		final List<P> readList = Lists.newArrayList();
