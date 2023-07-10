@@ -138,6 +138,9 @@ public class SU {
 	public static AtomicLong save_MS = new AtomicLong();
 
 	public static <T> List<Object> saveAll(final Mode mode, final Class<T> cls, final String sqlParam, final List<T> tList) {
+		System.out.println(
+				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "SU.saveAll()");
+
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
@@ -165,6 +168,7 @@ public class SU {
 					p0.add(p1);
 					ps.addBatch();
 				}
+				// TODO p0可能会太长了
 				LOG.info("[{}],[{}]", sql, p0);
 			} else {
 				for (final T t : tList) {
@@ -299,6 +303,9 @@ public class SU {
 	}
 
 	public static <T> List<T> findAll(final Mode mode, final Class<T> cls, final String sql) {
+		System.out.println(
+				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "SU.findAll()");
+
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 

@@ -20,6 +20,8 @@ import java.util.StringJoiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.vo.anno.UserRepositoryTest1;
+import com.vo.anno.ZEntity;
 import com.vo.anno.ZRead;
 import com.vo.anno.ZWrite;
 import com.vo.conn.Mode;
@@ -31,8 +33,6 @@ import com.vo.core.ZLog2;
 import com.vo.core.ZMethod;
 import com.vo.core.ZMethodArg;
 import com.vo.core.ZPackage;
-import com.vo.test.UserRepositoryTest1;
-import com.vo.test.ZEntity;
 
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.StrUtil;

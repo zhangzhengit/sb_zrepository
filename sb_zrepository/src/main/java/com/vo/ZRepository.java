@@ -2,9 +2,6 @@ package com.vo;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
-import com.vo.test.UserEntity;
-
 /**
  *
  * 顶级接口，自定义interface来 extends 此interface，注意自定义interface里面只可以有数据操作相关的方法.
@@ -34,7 +31,7 @@ public interface ZRepository<T, ID> {
 
 	List<ID> saveAll(List<T> tList);
 
-	List<UserEntity> findByIdIn(List<ID> idList);
+	List<T> findByIdIn(List<ID> idList);
 
 	List<T> findAll();
 

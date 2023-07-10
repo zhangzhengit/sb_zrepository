@@ -1,4 +1,4 @@
-package com.vo.test;
+package com.vo.anno;
 
 import java.lang.reflect.Type;
 import java.util.Set;
