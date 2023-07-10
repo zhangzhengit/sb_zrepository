@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringJoiner;
-import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.common.collect.Lists;
 import com.vo.conn.Mode;
@@ -135,7 +134,6 @@ public class SU {
 		return false;
 	}
 
-	public static AtomicLong save_MS = new AtomicLong();
 
 	public static <T> List<Object> saveAll(final Mode mode, final Class<T> cls, final String sqlParam, final List<T> tList) {
 		System.out.println(
@@ -168,7 +166,7 @@ public class SU {
 					p0.add(p1);
 					ps.addBatch();
 				}
-				// TODO p0可能会太长了
+				// TODO p0可能会太长
 				LOG.info("[{}],[{}]", sql, p0);
 			} else {
 				for (final T t : tList) {
@@ -359,20 +357,52 @@ public class SU {
 
 	public static <T> List<T> findByIdIn(final Mode mode, final List<Object> idList, final Class<T> cls, final String sql) {
 
-		// XXX ps.setArray 报错，暂时循环用findById
-		final ArrayList<T> r = Lists.newArrayListWithCapacity(idList.size());
-		for (final Object id : idList) {
-			final T findById = findById(mode, id, cls, sql);
-			r.add(findById);
+		final ZConnection zc = instance.getZConnection(mode);
+		final Connection connection = zc.getConnection();
+
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			final String s = sql;
+			// select * from user where id in (?)
+			final StringJoiner joiner = new StringJoiner(",");
+			for (final Object id : idList) {
+				joiner.add(String.valueOf(id));
+			}
+			final String param = joiner.toString();
+			final String s2 = s.replace("?", param);
+			ps = connection.prepareStatement(s2);
+			if (ZDP.getShowSql()) {
+				LOG.info("[{}],[{}]", s, param);
+			}
+
+			rs = ps.executeQuery();
+
+			final ResultSetMetaData metaData = rs.getMetaData();
+
+			final ArrayList<T> rList = Lists.newArrayListWithCapacity(idList.size());
+			while (rs.next()) {
+				final int count = metaData.getColumnCount();
+				final T t = newT(cls, rs, metaData, count);
+				rList.add(t);
+			}
+
+			return rList;
+		} catch (SQLException | SecurityException | InstantiationException | IllegalAccessException | NoSuchFieldException e) {
+			e.printStackTrace();
+		} finally {
+			instance.returnZConnection(zc);
+			try {
+				rs.close();
+				ps.close();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 		}
 
-		return r;
-
+		return null;
 	}
 
-
-	public static AtomicLong findByID_MS = new AtomicLong();
-	public static AtomicLong findByID__NEWT_MS = new AtomicLong();
 	public static <T> T findById(final Mode mode, final Object id, final Class<T> cls, final String sql) {
 
 		final ZConnection zc = instance.getZConnection(mode);
