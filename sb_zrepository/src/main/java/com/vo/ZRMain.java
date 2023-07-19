@@ -9,13 +9,16 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -332,7 +335,47 @@ public class ZRMain {
 
 					final ArrayList<String> spList = SqlP.sp(m.getName());
 
-					final List<String> fieldlist = SqlP.getField(spList);
+					final Field[] fs = typeClass.getDeclaredFields();
+
+
+					final List<String> fieldlist = Lists.newArrayList();
+					for (final Field field : fs) {
+						final String name = field.getName();
+						if (m.getName().toLowerCase().contains(name.toLowerCase())) {
+							System.out.println("cointains = " + name);
+							fieldlist.add(name);
+						}
+					}
+					final List<String> ffff = Lists.newArrayList();
+					final HashMap<Integer, String> fm = Maps.newHashMap();
+
+					for (final String f : fieldlist) {
+						final int i = m.getName().toLowerCase().indexOf(f.toLowerCase());
+						if(i > -1) {
+							fm.put(i, f);
+						}
+					}
+
+					fieldlist.clear();
+
+					final Set<Integer> keySet = fm.keySet();
+					final List<Integer> keyList = keySet.stream().sorted(Comparator.comparing(Integer::valueOf)).collect(Collectors.toList());
+
+					for (final Integer key : keyList) {
+						fieldlist.add(fm.get(key));
+					}
+
+
+					final List<String> fieldlist2 = SqlP.getField(spList);
+					for (final String f2 : fieldlist2) {
+
+						final Optional<String> findAny = fieldlist.stream().filter(f -> f.toLowerCase().contains(f2.toLowerCase())).findAny();
+						if(!findAny.isPresent()) {
+							fieldlist.add(f2);
+						}
+
+					}
+//					fieldlist.addAll(fieldlist2);
 
 					 String sql = sqlTemplate.replace("TABLE_NAME", tableName);
 
@@ -342,7 +385,11 @@ public class ZRMain {
 						throw new IllegalArgumentException("请检查方法声明 [" + m.getName() + "]");
 					}
 					for(int i = 0;i<fieldlist.size();i++) {
-						sql = sql.replaceFirst("@", fieldlist.get(i).toLowerCase());
+
+						final String dbColumn = convertJavaFileToDBColumn(fieldlist.get(i));
+
+						sql = sql.replaceFirst("@", dbColumn);
+//						sql = sql.replaceFirst("@", fieldlist.get(i).toLowerCase());
 					}
 
 					LOG.info("ZRepositoryStarter生成[{}]的方法[{}]的SQL模板=[{}]", class1.getCanonicalName(), m.getName(), sql);
@@ -358,6 +405,23 @@ public class ZRMain {
 
 			}
 		}
+
+	}
+
+	public static String convertJavaFileToDBColumn(final String filedName) {
+		final char[] charArray = filedName.toCharArray();
+		final StringBuilder builder = new StringBuilder(filedName);
+
+		for (int i = filedName.length() - 1; i > 0; i--) {
+			final char c = filedName.charAt(i);
+			if (SqlP.daxie.contains(c)) {
+				builder.replace(i, i+1, "_" + Character.toLowerCase(c));
+			}
+
+		}
+		System.out.println("builder = " + builder);
+
+		return builder.toString();
 
 	}
 
