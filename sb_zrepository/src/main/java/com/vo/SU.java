@@ -9,6 +9,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -20,6 +22,10 @@ import com.vo.conn.ZDatasourceProperties;
 import com.vo.conn.ZDatasourcePropertiesLoader;
 import com.vo.core.ZLog2;
 import com.vo.transaction.ZTransactionAspect;
+
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 
 /**
  * @see ZRepository 接口和其子接口里的方法的具体实现
@@ -138,6 +144,10 @@ public class SU {
 	public static <T> List<Object> saveAll(final Mode mode, final Class<T> cls, final String sqlParam, final List<T> tList) {
 		System.out.println(
 				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "SU.saveAll()");
+
+		if (CollUtil.isEmpty(tList)) {
+			return Collections.emptyList();
+		}
 
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
@@ -288,9 +298,15 @@ public class SU {
 				final Object v2 = field.get(t);
 				if (v2 instanceof String) {
 					v.add("'" + String.valueOf(v2) + "'");
+				} else if (v2 instanceof Date) {
+					// FIXME 2023年8月1日 下午8:50:26 zhanghen: TODO 日期时间的字段，新增注解：表示插入的格式
+					final String vD = DateUtil.format((Date)v2, DatePattern.NORM_DATETIME_FORMAT);
+					v.add("'" + vD + "'");
 				} else {
 					v.add(String.valueOf(v2));
 				}
+
+
 			} catch (IllegalArgumentException | IllegalAccessException e) {
 				e.printStackTrace();
 			}
