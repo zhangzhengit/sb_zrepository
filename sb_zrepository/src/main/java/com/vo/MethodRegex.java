@@ -188,7 +188,7 @@ public class MethodRegex {
 		R_M.put(GROUP_findByXXXEndingWith, REGEX_MAP_findByXXXEndingWith);
 		R_M.put(GROUP_findByXXXStartingWith, REGEX_MAP_StartingWith);
 		R_M.put(GROUP_findByXXIsNull, REGEX_MAP_findByXXXIsNull);
-		R_M.put(GROUP_findByXXLike, REGEX_MAP_FINDBYXXIN);
+		R_M.put(GROUP_findByXXLike, REGEX_MAP_findByXXXLike);
 		R_M.put(GROUP_findByXXLessThan, REGEX_MAP_LessThan);
 		R_M.put(GROUP_findByxx_in, REGEX_MAP_FINDBYXXIN);
 		R_M.put(GROUP_findByxxNot, REGEX_MAP_findByXXNot);
@@ -212,11 +212,14 @@ public class MethodRegex {
 
 			final Set<Entry<String, String>> es = hashMap.entrySet();
 			for (final Entry<String, String> entry : es) {
+				System.out.println("find = " + find);
+				System.out.println("entry.getKey() = " + entry.getKey());
 				if (find.matches(entry.getKey())) {
 //					System.out.println(find);
 //					System.out.println("匹配 k = \t" + entry.getKey());
 //					System.out.println(entry.getValue());
 
+					System.out.println("MMMMMMMMMMMMMMMM k = " + entry.getKey());
 					return entry;
 				}
 
