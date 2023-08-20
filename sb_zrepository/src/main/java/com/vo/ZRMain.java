@@ -626,6 +626,9 @@ public class ZRMain {
 				return "return " + SU.class.getCanonicalName() + ".count(" + modeString + ",classType,sql);";
 			}
 
+			if (key.matches(MethodRegex.GROUP_findByXXAndXX)) {
+				return gROUP_findByXXAndXX(method, key);
+			}
 			// 最短的排最后
 			if (key.matches(MethodRegex.GROUP_findByXX)) {
 				return gROUP_findByXX(method, key);
@@ -846,6 +849,23 @@ public class ZRMain {
 	}
 
 
+	private static String gROUP_findByXXAndXX(final Method method, final String key) {
+		final HashMap<String, String> hh = MethodRegex.R_M.get(MethodRegex.GROUP_findByXX);
+		final Set<Entry<String, String>> entrySet = hh.entrySet();
+		for (final Entry<String, String> entry : entrySet) {
+			if (key.matches(entry.getKey())) {
+				final Parameter[] parameters2 = method.getParameters();
+				final StringJoiner joiner = new StringJoiner(",");
+				for (final Parameter parameter : parameters2) {
+					joiner.add(parameter.getName());
+				}
+				final String modeString = modeString(method);
+				return "return " + SU.class.getCanonicalName() + ".findByXX("+modeString+",classType,sql," + joiner.toString()	+ ");";
+			}
+		}
+		// FIXME 2023年6月16日 下午4:49:57 zhanghen: 抛异常，不支持的方法
+		return "";
+	}
 	private static String gROUP_findByXX(final Method method, final String key) {
 		final HashMap<String, String> hh = MethodRegex.R_M.get(MethodRegex.GROUP_findByXX);
 		final Set<Entry<String, String>> entrySet = hh.entrySet();

@@ -30,6 +30,8 @@ public class MethodRegex {
 	public static final String GROUP_SAVEALL = "saveAll";
 	public static final String GROUP_SAVE = "save";
 	public static final String GROUP_FINDALL = "findAll";
+
+	public static final String GROUP_findByXXAndXX = "findBy(.*)And(.*)";
 	public static final String GROUP_findByXX = "findBy(.*)";
 	public static final String GROUP_findByxxNot = "findBy(.*)Not";
 	public static final String GROUP_findByxx_in = "findBy(.*)In";
@@ -50,7 +52,7 @@ public class MethodRegex {
 	public static final String save = GROUP_SAVE;
 	public static final String findAll = GROUP_FINDALL;
 	public static final String findByXX = GROUP_findByXX;
-	public static final String findByXXAndYY = "findBy(.*)And(.*)";
+	public static final String findByXXAndYY = GROUP_findByXXAndXX;
 	public static final String findByXXAndYYAndYY = "findBy(.*)And(.*)And(.*)";
 	public static final String findByXXAndYYAndYYAndYY = "findBy(.*)And(.*)And(.*)And(.*)";
 	public static final String findByXXAndYYAndYYAndYYAndYY = "findBy(.*)And(.*)And(.*)And(.*)And(.*)";
@@ -100,6 +102,7 @@ public class MethodRegex {
 	public final static HashMap<String, String> REGEX_MAP_DELETEBYID = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_SAVEALL = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_SAVE = new LinkedHashMap<>();
+	public final static HashMap<String, String> REGEX_MAP_FINDBYXXAndXX = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_FINDBYXX = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_findByXXXIsNull = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_findByXXXLike = new LinkedHashMap<>();
@@ -192,6 +195,7 @@ public class MethodRegex {
 		R_M.put(GROUP_findByXXLessThan, REGEX_MAP_LessThan);
 		R_M.put(GROUP_findByxx_in, REGEX_MAP_FINDBYXXIN);
 		R_M.put(GROUP_findByxxNot, REGEX_MAP_findByXXNot);
+		R_M.put(GROUP_findByXXAndXX, REGEX_MAP_FINDBYXX);
 		R_M.put(GROUP_findByXX, REGEX_MAP_FINDBYXX);
 		R_M.put(GROUP_FINDALL, REGEX_MAP_FINDALL);
 		R_M.put(GROUP_SAVEALL, REGEX_MAP_SAVEALL);
