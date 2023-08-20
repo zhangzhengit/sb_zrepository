@@ -1,6 +1,7 @@
 package com.vo;
 
 import java.lang.reflect.Field;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,9 +13,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.StringJoiner;
 
 import com.google.common.collect.Lists;
+import com.vo.anno.ZEntity;
 import com.vo.conn.Mode;
 import com.vo.conn.ZCPool;
 import com.vo.conn.ZConnection;
@@ -241,12 +244,67 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
-		Statement statement =null;
+		Statement statement = null;
 		ResultSet rs = null;
 		try {
+
+			final Field[] fs = t.getClass().getDeclaredFields();
+
+			final Optional<Field> zidO = Lists.newArrayList(fs).stream().filter(f -> f.isAnnotationPresent(ZID.class))
+					.findAny();
+			if (!zidO.isPresent()) {
+				throw new IllegalArgumentException(
+						ZEntity.class.getSimpleName() + " 类必须有 " + ZID.class.getSimpleName() + " 字段");
+			}
+			final Field idField = zidO.get();
+			idField.setAccessible(true);
+			final Object idValue = idField.get(t);
+
+			// update
+			if (idValue != null) {
+//				update user set online_status = 1,show_online_status = 1 where id = 1;
+				final String idDBColumn = ZFieldConverter.toDbField(idField.getName());
+				final String where = " where " + idDBColumn + " = " + idValue;
+
+				final ZEntity zEntity = t.getClass().getAnnotation(ZEntity.class);
+
+				final String update = " update " + zEntity.tableName() + " set ";
+
+				final StringBuilder ub = new StringBuilder();
+				for (int i = 0; i < fs.length; i++) {
+					final Field field = fs[i];
+					final String dbFieldname = ZFieldConverter.toDbField(field.getName());
+					ub.append(dbFieldname).append(" = ");
+
+					field.setAccessible(true);
+					final Object fV = field.get(t);
+					if (fV instanceof String) {
+						ub.append("'").append(fV).append("'");
+					} else if (fV instanceof Date) {
+						// FIXME 2023年8月1日 下午8:50:26 zhanghen: TODO 日期时间的字段，新增注解：表示插入的格式
+						final String vD = DateUtil.format((Date)fV, DatePattern.NORM_DATETIME_FORMAT);
+						ub.append("'").append(vD).append("'");
+					} else {
+						ub.append("'").append(fV).append("'");
+					}
+
+					if (i < fs.length - 1) {
+						ub.append(",");
+					}
+				}
+
+				final String updateSQL = update + ub + where;
+				System.out.println("updateSQL = " + updateSQL);
+
+				final PreparedStatement prepareStatement = connection.prepareStatement(updateSQL);
+				prepareStatement.execute();
+				return idValue;
+			}
+
+			// save
 			final String sql2 = gSaveSql(cls, t, sql);
 			final String s = sql2;
-			statement = connection.createStatement();
+			 statement = connection.createStatement();
 			final int executeUpdate = statement.executeUpdate(s, Statement.RETURN_GENERATED_KEYS);
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}],[{}]", sql, t);
@@ -262,8 +320,12 @@ public class SU {
 		} finally {
 			instance.returnZConnection(zc);
 			try {
-				rs.close();
-				statement.close();
+				if (rs != null) {
+					rs.close();
+				}
+				if (statement != null) {
+					statement.close();
+				}
 			} catch (final SQLException e) {
 				e.printStackTrace();
 			}
