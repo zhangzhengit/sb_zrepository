@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
 
+import org.aspectj.weaver.patterns.ThisOrTargetAnnotationPointcut;
+
 import com.google.common.collect.Lists;
 import com.vo.anno.ZEntity;
 import com.vo.conn.Mode;
@@ -260,13 +262,19 @@ public class SU {
 			idField.setAccessible(true);
 			final Object idValue = idField.get(t);
 
+			final ZEntity zEntity = t.getClass().getAnnotation(ZEntity.class);
+
+
+			// select
+			final String selectById = "select * from " + zEntity.tableName() + " where id = ?";
+
+			final T findById = findById(mode, idValue, cls, selectById);
 			// update
-			if (idValue != null) {
+			if (findById != null) {
 //				update user set online_status = 1,show_online_status = 1 where id = 1;
 				final String idDBColumn = ZFieldConverter.toDbField(idField.getName());
 				final String where = " where " + idDBColumn + " = " + idValue;
 
-				final ZEntity zEntity = t.getClass().getAnnotation(ZEntity.class);
 
 				final String update = " update " + zEntity.tableName() + " set ";
 
@@ -274,10 +282,14 @@ public class SU {
 				for (int i = 0; i < fs.length; i++) {
 					final Field field = fs[i];
 					final String dbFieldname = ZFieldConverter.toDbField(field.getName());
-					ub.append(dbFieldname).append(" = ");
 
 					field.setAccessible(true);
 					final Object fV = field.get(t);
+					if (fV == null) {
+						continue;
+					}
+
+					ub.append(dbFieldname).append(" = ");
 					if (fV instanceof String) {
 						ub.append("'").append(fV).append("'");
 					} else if (fV instanceof Date) {
@@ -285,15 +297,14 @@ public class SU {
 						final String vD = DateUtil.format((Date)fV, DatePattern.NORM_DATETIME_FORMAT);
 						ub.append("'").append(vD).append("'");
 					} else {
-						ub.append("'").append(fV).append("'");
+						ub.append(fV);
+//						ub.append("'").append(fV).append("'");
 					}
 
-					if (i < fs.length - 1) {
-						ub.append(",");
-					}
+					ub.append(",");
 				}
 
-				final String updateSQL = update + ub + where;
+				final String updateSQL = update + ub.replace(ub.length() - 1, ub.length(), "") + where;
 				System.out.println("updateSQL = " + updateSQL);
 
 				final PreparedStatement prepareStatement = connection.prepareStatement(updateSQL);
