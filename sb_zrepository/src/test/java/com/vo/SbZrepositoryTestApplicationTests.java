@@ -1,18 +1,25 @@
 package com.vo;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.assertj.core.api.AbstractBooleanAssert;
-import org.assertj.core.api.AssertionsForClassTypes;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import com.google.common.hash.Hashing;
 import com.vo.test.NumberEntity;
 import com.vo.test.NumberZRepository;
 import com.votool.ze.ZE;
@@ -30,6 +37,7 @@ class SbZrepositoryTestApplicationTests {
 
 	@Autowired
 	NumberZRepository nnnnnnnnn;
+
 
 	@Test
 	void test_save4() {
