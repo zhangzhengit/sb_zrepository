@@ -1,5 +1,7 @@
 package com.vo;
 
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -29,6 +31,34 @@ class SbZrepositoryTestApplicationTests {
 	@Autowired
 	NumberZRepository nnnnnnnnn;
 
+
+	@Test
+	void test_count1() {
+
+		final List<NumberEntity> findAll = this.nnnnnnnnn.findAll();
+		System.out.println("findAll.size = " + findAll.size());
+
+		final Long count = this.nnnnnnnnn.count();
+		assertThat(count.intValue() == findAll.size());
+
+		final NumberEntity entity = new NumberEntity()
+				;
+		entity.setAge(2023023);
+		this.nnnnnnnnn.save(entity);
+
+		final Long c2 = this.nnnnnnnnn.count();
+		assertThat(c2 == count + 1L);
+
+	}
+
+
+	@Test
+	void test_findAll1() {
+
+		final List<NumberEntity> findAll = this.nnnnnnnnn.findAll();
+		System.out.println("findAll.size = " + findAll.size());
+		System.out.println("findAll = " + findAll);
+	}
 
 	@Test
 	void test_findByXXLike_2() {
