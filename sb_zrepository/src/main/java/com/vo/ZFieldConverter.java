@@ -36,8 +36,11 @@ public class ZFieldConverter {
 		for (int i = 0; i < charArray.length; i++) {
 			final char c = charArray[i];
 			if (daxie.contains(c)) {
-
-				n = n.replace(String.valueOf(c), "_" + String.valueOf(c).toLowerCase());
+				if (i == 0) {
+					n = n.replace(String.valueOf(c), String.valueOf(c).toLowerCase());
+				} else {
+					n = n.replace(String.valueOf(c), "_" + String.valueOf(c).toLowerCase());
+				}
 			}
 		}
 

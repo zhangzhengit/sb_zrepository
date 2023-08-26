@@ -1,5 +1,6 @@
 package com.vo;
 
+import java.awt.Menu;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -9,16 +10,22 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.omg.CORBA.REBIND;
+import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchProperties;
+import org.springframework.web.servlet.RequestToViewNameTranslator;
+
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -39,6 +46,8 @@ import com.vo.core.ZPackage;
 
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.StrUtil;
+import io.lettuce.core.AbstractRedisAsyncCommands;
+import reactor.core.Fuseable.SynchronousSubscription;
 
 /**
  *
@@ -196,24 +205,27 @@ public class ZRMain {
 				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "ZRMain.start()");
 
 
+		// 0 checkZEntityField
+//		checkZEntityField();
+
 		// 1 建立连接池
 //		ZCPool.getInstance();
 
 		// 2 扫描 @ZEntity的类
-		final Set<Class<?>> zeClassSet = scanZEntity();
+//		final Set<Class<?>> zeClassSet = scanZEntity();
 //		gWrapperRepository(zeClassSet);
 
 		// 3给 ZR 的子类根据方法名称来生成对应的sql
 //		gSqlForZRSubclass(zeClassSet);
-		final Set<Class<?>> zrSubclassSet = scanZRSubclass();
+//		final Set<Class<?>> zrSubclassSet = scanZRSubclass();
 
-		generateSqlForZRSubclass(zrSubclassSet);
+//		generateSqlForZRSubclass(zrSubclassSet);
 
 
 		// 测试 插入一条数据
 
 		// FIXME 2023年6月16日 上午11:08:00 zhanghen: 先生成ZR的子接口的实现类
-		generateClassForZRSubinterface(zrSubclassSet);
+//		generateClassForZRSubinterface(zrSubclassSet);
 
 
 // FIXME 2023年6月16日 上午10:59:52 zhanghen: 自己写一个aop
@@ -272,6 +284,9 @@ public class ZRMain {
 	}
 
 	public static Set<Class<?>> scanZRSubclass() {
+
+		checkZEntityField();
+
 		final Set<Class<?>> zrSubclassSet = Sets.newHashSet();
 		final Set<Class<?>> clsSet = scanPackage_COM();
 		for (final Class<?> class1 : clsSet) {
@@ -301,128 +316,156 @@ public class ZRMain {
 
 	/**
 	 *
-	 * @param zeClassSet
+	 * @param zrClassSet
 	 *
 	 * @author zhangzhen
 	 * @date 2023年6月16日
 	 */
-	public static void generateSqlForZRSubclass(final Set<Class<?>> zeClassSet) {
+	public static void generateSqlForZRSubclass(final Set<Class<?>> zrClassSet) {
 
 		LOG.info("ZRepositoryStarter开始生成[{}]的子接口的SQL模板", ZRepository.class.getCanonicalName());
 
-		for (final Class<?> class1 : zeClassSet) {
-			LOG.info("ZRepositoryStarter开始生成[{}]的SQL模板", class1.getCanonicalName());
-			final String[] typeArray = UserRepositoryTest1.findZRSubclassFanxing(class1);
+		for (final Class<?> zrSubClass : zrClassSet) {
+			LOG.info("ZRepositoryStarter开始生成[{}]的SQL模板", zrSubClass.getCanonicalName());
+			final String[] typeArray = UserRepositoryTest1.findZRSubclassFanxing(zrSubClass);
 
-			final Method[] ms = class1.getMethods();
+			final Method[] ms = zrSubClass.getMethods();
+
+			final Method[] dms = zrSubClass.getDeclaredMethods();
+			final ArrayList<Method> dmsList = Lists.newArrayList(dms);
+
 			for (final Method m : ms) {
-				LOG.info("ZRepositoryStarter开始生成[{}]的方法[{}]的SQL模板", class1.getCanonicalName(), m.getName());
+				LOG.info("ZRepositoryStarter开始生成[{}]的方法[{}]的SQL模板", zrSubClass.getCanonicalName(), m.getName());
 
 				final Entry<String, String> check = MethodRegex.check(m.getName(), m);
 
 				final String type = typeArray[0];
 				try {
 					final Class<?> typeClass = Class.forName(type);
-					final ZEntity zea = typeClass.getAnnotation(ZEntity.class);
-					if (zea == null) {
-						throw new IllegalArgumentException("类型[" + typeClass.getCanonicalName() + "]缺少["
-								+ ZEntity.class.getCanonicalName() + "]注解");
-					}
-
-					final String tableName = zea.tableName();
-
+					final ZEntity zEntity = typeClass.getAnnotation(ZEntity.class);
+					// 2
+					final String zrSubClassName = zrSubClass.getCanonicalName();
+					final String methodName = m.getName();
 					final String sqlTemplate = check.getValue();
 
-					final ArrayList<String> spList = SqlP.sp(m.getName());
+					final String tableName = zEntity.tableName();
+					final String sql = sqlTemplate.replace("TABLE_NAME", tableName);
 
-					final Field[] fs = typeClass.getDeclaredFields();
+					final boolean isZidingyi = dmsList.contains(m);
 
+					final String sqlA = checkFindByXX(typeClass, methodName, sql);
 
-					final List<String> fieldlist = Lists.newArrayList();
-					for (final Field field : fs) {
-						final String name = field.getName();
-						if (m.getName().toLowerCase().contains(name.toLowerCase())) {
-							System.out.println("cointains = " + name);
-							fieldlist.add(name);
-						}
-					}
-					final List<String> ffff = Lists.newArrayList();
-					final HashMap<Integer, String> fm = Maps.newHashMap();
-
-					for (final String f : fieldlist) {
-						final int i = m.getName().toLowerCase().indexOf(f.toLowerCase());
-						if(i > -1) {
-							fm.put(i, f);
-						}
-					}
-
-					fieldlist.clear();
-
-					final Set<Integer> keySet = fm.keySet();
-					final List<Integer> keyList = keySet.stream().sorted(Comparator.comparing(Integer::valueOf)).collect(Collectors.toList());
-
-					for (final Integer key : keyList) {
-						fieldlist.add(fm.get(key));
-					}
-
-
-					final List<String> fieldlist2 = SqlP.getField(spList);
-					for (final String f2 : fieldlist2) {
-
-						final Optional<String> findAny = fieldlist.stream().filter(f -> f.toLowerCase().contains(f2.toLowerCase())).findAny();
-						if(!findAny.isPresent()) {
-							fieldlist.add(f2);
-						}
-
-					}
-//					fieldlist.addAll(fieldlist2);
-
-					 String sql = sqlTemplate.replace("TABLE_NAME", tableName);
-
-
-					final int atCount = StrUtil.count(sql, "@");
-					if (atCount != fieldlist.size()) {
-						throw new IllegalArgumentException("请检查方法声明 [" + m.getName() + "]");
-					}
-					for(int i = 0;i<fieldlist.size();i++) {
-
-						final String dbColumn = convertJavaFileToDBColumn(fieldlist.get(i));
-
-						sql = sql.replaceFirst("@", dbColumn);
-//						sql = sql.replaceFirst("@", fieldlist.get(i).toLowerCase());
-					}
-
-					LOG.info("ZRepositoryStarter生成[{}]的方法[{}]的SQL模板=[{}]", class1.getCanonicalName(), m.getName(), sql);
-
-					final String zrSubClassName = class1.getCanonicalName();
-					final String methodName = m.getName();
-
-					ZRSqlMap.put(zrSubClassName, methodName, sql);
+					ZRSqlMap.put(zrSubClassName, methodName, sqlA);
+//					ZRSqlMap.put(zrSubClassName, methodName, sql);
 
 				} catch (final ClassNotFoundException e) {
 					e.printStackTrace();
 				}
-
 			}
 		}
+	}
+
+	/**
+	 * 校验一下方法声明是否正确，是否符合命名规则，见MethodRegex.GROUP_ 开头的常量正则表达式
+	 *
+	 * @param typeClass  @ZEntity标记的类
+	 * @param methodName ZRepository 子类中的自定义的findByXX的方法名称,如findByUserId
+	 * @param sql        sql模板，如：select * from user where @ = ?
+	 * @return 返回可用于java.sql.PreparedStatement 的SQL语句，
+	 * 			如 : select * from user where id = ?
+	 *
+	 */
+	private static String checkFindByXX(final Class<?> typeClass,final String methodName, final String sql) {
+		// methodName 从每个大写字母分开分成一个数组，如findByUserId 分成[find, By, User, Id]
+
+		final List<String> fnLIst = getDeclaredFieldName(typeClass);
+
+		System.out.println("methodName = " + methodName);
+		final List<String> alList = splitMethodNameToArray(methodName);
+		System.out.println("fnLIst = \n");
+		System.out.println(fnLIst);
+		System.out.println("alList = \n");
+		System.out.println(alList);
+
+		// findByUserId 分成[find, By, User, Id] ，从前往后计算是否sql关键字，否则按照entity字段处理
+
+		final HashSet<String> sqlKeyword = SqlPattern.SQL_KEYWORD;
+		String mn2 = methodName;
+		for (final String sk : sqlKeyword) {
+			mn2 = mn2.replace(sk, "-");
+		}
+		final boolean removeAll = alList.removeAll(sqlKeyword);
+		System.out.println("alList-removeAll-sqlKeyword = \n");
+		System.out.println(alList);
+
+		System.out.println("mn2 = " + mn2);
+		final String[] fieldNameArray = mn2.split("-");
+		System.out.println("fieldNameArray = " + Arrays.toString(fieldNameArray));
+		final List<String> fieldNameList = Lists.newArrayList(fieldNameArray).stream().filter(x -> StrUtil.isNotBlank(x)).collect(Collectors.toList());
+
+		for (final String fn : fieldNameList) {
+			final Optional<String> findAny = fnLIst.stream().filter(f1 -> f1.equalsIgnoreCase(fn)).findAny();
+			if (!findAny.isPresent()) {
+				// FIXME 2023年8月26日 下午5:50:54 zhanghen: TODO 提示信息再详细一点
+				throw new IllegalArgumentException(ZRepository.class.getSimpleName() + " 子类自定义方法声明错误，methodName = " + methodName + "，"
+						+  "请确认方法名由SQL关键字和@ZEntity类中的字段组成，"
+						+  "方法名称命名规则见 " + MethodRegex.class.getSimpleName() + " 中以 GROUP_ 开头的常量。"
+						);
+			}
+		}
+
+		System.out.println("fieldNameList = " + fieldNameList);
+		String sqlA = sql;
+		for (final String fieldName : fieldNameList) {
+			final String dbColumnName = ZFieldConverter.toDbField(fieldName);
+			sqlA = sqlA.replaceFirst("@", dbColumnName);
+		}
+		System.out.println("sql = " + sql);
+		System.out.println("sqlA = " + sqlA);
+
+
+		return sqlA;
 
 	}
 
-	public static String convertJavaFileToDBColumn(final String filedName) {
-		final char[] charArray = filedName.toCharArray();
-		final StringBuilder builder = new StringBuilder(filedName);
+	private static List<String> getDeclaredFieldName(final Class<?> typeClass) {
+		final Field[] fs = typeClass.getDeclaredFields();
+		final List<String> fieldNameList = Arrays.asList(fs).stream().map(f -> f.getName()).collect(Collectors.toList());
+		return fieldNameList;
+	}
 
-		for (int i = filedName.length() - 1; i > 0; i--) {
-			final char c = filedName.charAt(i);
-			if (SqlP.daxie.contains(c)) {
-				builder.replace(i, i+1, "_" + Character.toLowerCase(c));
+	/**
+	 * 把一个自定义方法名按大写字母拆开，拆成一个数组。如findByUserId拆分成[find, By, User, Id]
+	 *
+	 * @param zRepositoryMethodName
+	 * @return
+	 *
+	 */
+	private static List<String> splitMethodNameToArray(final String zRepositoryMethodName) {
+		if (StrUtil.isEmpty(zRepositoryMethodName)) {
+			return Collections.emptyList();
+		}
+
+		final char[] ch = zRepositoryMethodName.toCharArray();
+		final List<String> aL = Lists.newArrayList();
+		int from = 0;
+		for (int i = 1; i < ch.length; i++) {
+			final boolean isDaxie = SqlPattern.daxie.contains(ch[i]);
+			if (isDaxie) {
+				final String temp = zRepositoryMethodName.substring(from, i);
+//				System.out.println("temp = " + temp);
+				aL.add(temp);
+				from = i;
+			}
+			if (i == ch.length - 1) {
+				final String temp2 = zRepositoryMethodName.substring(from,  ch.length);
+//				System.out.println("temp2 = " + temp2);
+				aL.add(temp2);
 			}
 
 		}
-		System.out.println("builder = " + builder);
 
-		return builder.toString();
-
+		return aL;
 	}
 
 
@@ -439,7 +482,9 @@ public class ZRMain {
 		final String canonicalName = myZRClass.getCanonicalName();
 //		final String canonicalName = ZRepository.class.getCanonicalName();
 		final ZClass userR = new ZClass();
-		userR.setPackage1(new ZPackage("com.vo"));
+
+		// FIXME 2023年8月26日 下午5:54:25 zhanghen: com.vo改为配置项
+		userR.setPackage1(new ZPackage("com"));
 
 		//		userR.setImplementsSet(Sets.newHashSet(canonicalName + " <T, ID> "));
 //		userR.setName(canonicalName + "_ZClass" + "<T,ID>");
@@ -884,15 +929,33 @@ public class ZRMain {
 		return "";
 	}
 
-	private static Set<Class<?>> scanZEntity() {
+	/**
+	 * 校验 @ZEntity 中的字段，如：不允许出现SQL关键字等等
+	 *
+	 * @return 返回 @ZEntity 的类
+	 *
+	 */
+	private static Set<Class<?>> checkZEntityField() {
 		final Set<Class<?>> zeSet = Sets.newHashSet();
 		final Set<Class<?>> clsSet = ClassUtil.scanPackage();
-		for (final Class<?> class1 : clsSet) {
-			final boolean isZE = class1.isAnnotationPresent(ZEntity.class);
-			if (isZE) {
-//				System.out.println("@ZEntity = " + class1.getCanonicalName());
-				zeSet.add(class1);
+		for (final Class<?> c : clsSet) {
+			final boolean isZE = c.isAnnotationPresent(ZEntity.class);
+			if (!isZE) {
+				continue;
 			}
+
+			final Field[] fs = c.getDeclaredFields();
+			for (final Field f : fs) {
+				final String fName = f.getName();
+				final boolean sqlKeyword = SqlPattern.isSqlKeyword(fName);
+				if (sqlKeyword) {
+					throw new IllegalArgumentException(ZEntity.class.getSimpleName() + " 类中字段不允许出现SQL关键字," +ZEntity.class.getSimpleName()+" 类 = " +
+							c.getSimpleName() + ",filed = " + fName);
+				}
+
+			}
+
+			zeSet.add(c);
 		}
 
 		return zeSet;

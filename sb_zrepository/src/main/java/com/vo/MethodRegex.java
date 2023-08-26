@@ -216,14 +216,14 @@ public class MethodRegex {
 
 			final Set<Entry<String, String>> es = hashMap.entrySet();
 			for (final Entry<String, String> entry : es) {
-				System.out.println("find = " + find);
-				System.out.println("entry.getKey() = " + entry.getKey());
+//				System.out.println("find = " + find);
+//				System.out.println("entry.getKey() = " + entry.getKey());
 				if (find.matches(entry.getKey())) {
 //					System.out.println(find);
 //					System.out.println("匹配 k = \t" + entry.getKey());
 //					System.out.println(entry.getValue());
 
-					System.out.println("MMMMMMMMMMMMMMMM k = " + entry.getKey());
+//					System.out.println("MMMMMMMMMMMMMMMM k = " + entry.getKey());
 					return entry;
 				}
 
@@ -239,7 +239,7 @@ public class MethodRegex {
 	}
 
 	public static ArrayList<String> getFieldFromMethodname(final String methdoName) {
-		final ArrayList<String> sp = SqlP.sp(methdoName);
+		final ArrayList<String> sp = SqlPattern.sp(methdoName);
 		return sp;
 
 	}

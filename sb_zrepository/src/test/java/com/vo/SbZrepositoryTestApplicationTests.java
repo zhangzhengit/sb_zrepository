@@ -1,29 +1,20 @@
 package com.vo;
 
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.google.common.hash.Hashing;
 import com.vo.test.NumberEntity;
 import com.vo.test.NumberZRepository;
 import com.votool.ze.ZE;
 import com.votool.ze.ZES;
+
+import cn.hutool.core.lang.UUID;
 
 /**
  *
@@ -37,6 +28,56 @@ class SbZrepositoryTestApplicationTests {
 
 	@Autowired
 	NumberZRepository nnnnnnnnn;
+
+
+	@Test
+	void test_findByXXLike_2() {
+		final List<NumberEntity> list = this.nnnnnnnnn.findByNameLike("a");
+		System.out.println("list.size = " + list.size());
+		System.out.println("list = " + list);
+	}
+
+	@Test
+	void test_findByXXLike_1() {
+		final List<NumberEntity> list = this.nnnnnnnnn.findByNameStartingWith("1a");
+		System.out.println("list.size = " + list.size());
+		System.out.println("list = " + list);
+	}
+
+	@Test
+	void test_findByUserIdAndName2() {
+
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.test_findByUserIdAndName2()");
+		final NumberEntity e = new NumberEntity();
+		e.setName(UUID.randomUUID().toString());
+		e.setAge(200);
+
+
+		final List<NumberEntity> l2 = this.nnnnnnnnn.findByAgeAndName(e.getAge(), e.getName());
+		assertThat(l2.size() == 0);
+
+		this.nnnnnnnnn.save(e);
+
+		final List<NumberEntity> l2x = this.nnnnnnnnn.findByAgeAndName(e.getAge(), e.getName());
+		assertThat(l2x.size() == 1);
+		System.out.println("l2x = " + l2x);
+
+
+
+
+	}
+	@Test
+	void test_findByUserIdAndName() {
+		final NumberEntity e = new NumberEntity();
+		e.setName(UUID.randomUUID().toString());
+
+		final NumberEntity save = this.nnnnnnnnn.save(e);
+
+		System.out.println("save.id = " + save.getId());
+		assertThat(save.getName().equals(e.getName()));
+
+	}
 
 
 	@Test
@@ -60,12 +101,13 @@ class SbZrepositoryTestApplicationTests {
 	}
 
 	/**
+	 *
 	 * 根据id查，结果必须是id等于参数id的那一条
 	 *
 	 */
 	@Test
 	void test_save3() {
-		final int n = 4010;
+		final int n = 2000;
 		final AtomicInteger saveA = new AtomicInteger();
 		for (int id = 1; id <= n; id++) {
 

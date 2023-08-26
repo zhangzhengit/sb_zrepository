@@ -1,7 +1,6 @@
 package com.vo;
 
 import java.lang.reflect.Field;
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,8 +14,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
-
-import org.aspectj.weaver.patterns.ThisOrTargetAnnotationPointcut;
 
 import com.google.common.collect.Lists;
 import com.vo.anno.ZEntity;
@@ -217,10 +214,14 @@ public class SU {
 		} finally {
 			try {
 				connection.commit();
-				ps.clearBatch();
-				rs.close();
-				ps.close();
 				instance.returnZConnection(zc);
+				if (ps != null) {
+					ps.clearBatch();
+					ps.close();
+				}
+				if (rs != null) {
+					rs.close();
+				}
 			} catch (final SQLException e) {
 				e.printStackTrace();
 			}
@@ -265,70 +266,76 @@ public class SU {
 			final ZEntity zEntity = t.getClass().getAnnotation(ZEntity.class);
 
 
-			// select
-			final String selectById = "select * from " + zEntity.tableName() + " where id = ?";
-
-			final T findById = findById(mode, idValue, cls, selectById);
 			// update
-			if (findById != null) {
+			if (idValue != null) {
+				// select
+				final String selectById = "select * from " + zEntity.tableName() + " where id = ?";
+
+				final T findById = findById(mode, idValue, cls, selectById);
+				if (findById != null) {
 //				update user set online_status = 1,show_online_status = 1 where id = 1;
-				final String idDBColumn = ZFieldConverter.toDbField(idField.getName());
-				final String where = " where " + idDBColumn + " = " + idValue;
+					final String idDBColumn = ZFieldConverter.toDbField(idField.getName());
+					final String where = " where " + idDBColumn + " = " + idValue;
 
+					final String update = " update " + zEntity.tableName() + " set ";
 
-				final String update = " update " + zEntity.tableName() + " set ";
+					final StringBuilder ub = new StringBuilder();
+					for (int i = 0; i < fs.length; i++) {
+						final Field field = fs[i];
+						final String dbFieldname = ZFieldConverter.toDbField(field.getName());
 
-				final StringBuilder ub = new StringBuilder();
-				for (int i = 0; i < fs.length; i++) {
-					final Field field = fs[i];
-					final String dbFieldname = ZFieldConverter.toDbField(field.getName());
+						field.setAccessible(true);
+						final Object fV = field.get(t);
+						if (fV == null) {
+							continue;
+						}
 
-					field.setAccessible(true);
-					final Object fV = field.get(t);
-					if (fV == null) {
-						continue;
-					}
-
-					ub.append(dbFieldname).append(" = ");
-					if (fV instanceof String) {
-						ub.append("'").append(fV).append("'");
-					} else if (fV instanceof Date) {
-						// FIXME 2023年8月1日 下午8:50:26 zhanghen: TODO 日期时间的字段，新增注解：表示插入的格式
-						final String vD = DateUtil.format((Date)fV, DatePattern.NORM_DATETIME_FORMAT);
-						ub.append("'").append(vD).append("'");
-					} else {
-						ub.append(fV);
+						ub.append(dbFieldname).append(" = ");
+						if (fV instanceof String) {
+							ub.append("'").append(fV).append("'");
+						} else if (fV instanceof Date) {
+							// FIXME 2023年8月1日 下午8:50:26 zhanghen: TODO 日期时间的字段，新增注解：表示插入的格式
+							final String vD = DateUtil.format((Date) fV, DatePattern.NORM_DATETIME_FORMAT);
+							ub.append("'").append(vD).append("'");
+						} else {
+							ub.append(fV);
 //						ub.append("'").append(fV).append("'");
+						}
+
+						ub.append(",");
 					}
 
-					ub.append(",");
+					final String updateSQL = update + ub.replace(ub.length() - 1, ub.length(), "") + where;
+					System.out.println("updateSQL = " + updateSQL);
+
+					final PreparedStatement prepareStatement = connection.prepareStatement(updateSQL);
+					prepareStatement.execute();
+					return idValue;
 				}
-
-				final String updateSQL = update + ub.replace(ub.length() - 1, ub.length(), "") + where;
-				System.out.println("updateSQL = " + updateSQL);
-
-				final PreparedStatement prepareStatement = connection.prepareStatement(updateSQL);
-				prepareStatement.execute();
-				return idValue;
 			}
 
 			// save
 			final String sql2 = gSaveSql(cls, t, sql);
 			final String s = sql2;
+			connection.setAutoCommit(false);
 			 statement = connection.createStatement();
-			final int executeUpdate = statement.executeUpdate(s, Statement.RETURN_GENERATED_KEYS);
+
+			 final boolean execute = statement.execute(s,Statement.RETURN_GENERATED_KEYS);
+//			final int executeUpdate = statement.executeUpdate(s, Statement.RETURN_GENERATED_KEYS);
 			if (ZDP.getShowSql()) {
-				LOG.info("[{}],[{}]", sql, t);
+				LOG.info("[{}],[{}]", sql2, t);
 			}
 
 			rs = statement.getGeneratedKeys();
 			if (rs.next()) {
 				final Object id = rs.getObject(1);
+				connection.commit();
 				return id;
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
 		} finally {
+			System.out.println("save-} finally {");
 			instance.returnZConnection(zc);
 			try {
 				if (rs != null) {

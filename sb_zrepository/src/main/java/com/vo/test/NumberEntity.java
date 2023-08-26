@@ -22,6 +22,7 @@ public class NumberEntity {
 
 	@ZID
 	private Integer id;
+//	private Integer Order;
 
 	private Integer userId;
 	private Long bigint1;

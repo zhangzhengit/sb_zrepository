@@ -24,7 +24,7 @@ import com.mysql.cj.protocol.a.TextResultsetReader;
  * @date 2023年6月15日
  *
  */
-public class SqlP {
+public class SqlPattern {
 
 	public static ArrayList<String> sp(final String methodName) {
 		final ArrayList<String> pl = Lists.newArrayList();
@@ -60,7 +60,7 @@ public class SqlP {
 
 	public static List<String> getField(final ArrayList<String> pList) {
 
-		final List<String> fieldNameLIst = pList.stream().filter(p -> !zrKeyword.contains(p))
+		final List<String> fieldNameLIst = pList.stream().filter(p -> !SQL_KEYWORD.contains(p))
 				.collect(Collectors.toList());
 		return fieldNameLIst;
 
@@ -69,44 +69,45 @@ public class SqlP {
 	/**
 	 * ZRepository 声明式方法的关键字
 	 */
-	static HashSet<String> zrKeyword = Sets.newHashSet();
+	public static final HashSet<String> SQL_KEYWORD = Sets.newHashSet();
 
-	static HashSet<String> inOrLikeAnd = Sets.newHashSet("And", "In", "Or", "Like");
-	static HashSet<String> keyword = Sets.newHashSet("find", "delete", "save", "exist", "page", "By", "In", "Or",
+	public static HashSet<String> inOrLikeAnd = Sets.newHashSet("And", "In", "Or", "Like");
+	public static HashSet<String> keyword = Sets.newHashSet("find", "delete", "save", "exist", "page", "By", "In", "Or",
 			"Like");
-	static HashSet<String> methodPrefix = Sets.newHashSet("find", "delete", "save", "exist", "page");
+	public static final HashSet<String> methodPrefix = Sets.newHashSet("find", "delete", "save", "exist", "page");
 
-	static HashSet<Character> xiaoxie = Sets.newHashSet('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-			'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z');
+	public static final HashSet<Character> shuzi = Sets.newHashSet('1', '2', '3', '4', '5', '6', '7', '8', '9', '0');
+	public static final  HashSet<Character> xiaoxie = Sets.newHashSet('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
+			'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z');
 
-	public static HashSet<Character> daxie = Sets.newHashSet('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-			'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z');
+	public static final HashSet<Character> daxie = Sets.newHashSet('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+			'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z');
 
 	static {
-		zrKeyword.addAll(inOrLikeAnd);
-		zrKeyword.addAll(keyword);
-		zrKeyword.addAll(methodPrefix);
+		SQL_KEYWORD.addAll(inOrLikeAnd);
+		SQL_KEYWORD.addAll(keyword);
+		SQL_KEYWORD.addAll(methodPrefix);
 
-		zrKeyword.add("All");
-		zrKeyword.add("Less");
-		zrKeyword.add("Than");
-		zrKeyword.add("Is");
-		zrKeyword.add("Null");
-		zrKeyword.add("counting");
-		zrKeyword.add("count");
+		SQL_KEYWORD.add("All");
+		SQL_KEYWORD.add("Less");
+		SQL_KEYWORD.add("Than");
+		SQL_KEYWORD.add("Is");
+		SQL_KEYWORD.add("Null");
+		SQL_KEYWORD.add("counting");
+		SQL_KEYWORD.add("count");
 
-		zrKeyword.add("Limit");
-		zrKeyword.add("Order");
-		zrKeyword.add("Desc");
-		zrKeyword.add("Asc");
-		zrKeyword.add("Equals");
-		zrKeyword.add("Equal");
-		zrKeyword.add("Greater");
+		SQL_KEYWORD.add("Limit");
+		SQL_KEYWORD.add("Order");
+		SQL_KEYWORD.add("Desc");
+		SQL_KEYWORD.add("Asc");
+		SQL_KEYWORD.add("Equals");
+		SQL_KEYWORD.add("Equal");
+		SQL_KEYWORD.add("Greater");
 
-		zrKeyword.add("Starting");
-		zrKeyword.add("Ending");
-		zrKeyword.add("With");
-		zrKeyword.add("Not");
+		SQL_KEYWORD.add("Starting");
+		SQL_KEYWORD.add("Ending");
+		SQL_KEYWORD.add("With");
+		SQL_KEYWORD.add("Not");
 
 	}
 
@@ -135,6 +136,10 @@ public class SqlP {
 			return r;
 		}
 
+	}
+
+	public static boolean isSqlKeyword(final String name) {
+		return SQL_KEYWORD.contains(name);
 	}
 
 }
