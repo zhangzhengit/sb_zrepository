@@ -33,6 +33,58 @@ class SbZrepositoryTestApplicationTests {
 
 
 	@Test
+	void findByAgeNot() {
+		final List<NumberEntity> not200ageList = this.nnnnnnnnn.findByAgeNot(200);
+		System.out.println("not200ageList.size = " + not200ageList.size());
+		System.out.println("not200ageList = " + not200ageList);
+
+		final List<NumberEntity> e200ageList = this.nnnnnnnnn.findByAge(200);
+		System.out.println("e200ageList.size = " + e200ageList.size());
+		System.out.println("e200ageList = " + e200ageList);
+		final List<NumberEntity> nullList = this.nnnnnnnnn.findByAgeIsNull(200);
+		System.out.println("nullList.size = " + nullList.size());
+		System.out.println("nullList = " + nullList);
+
+		final Long count = this.nnnnnnnnn.count();
+		assertThat(count.intValue() == e200ageList.size() + not200ageList.size()  + nullList.size());
+	}
+
+	@Test
+	void deleteById() {
+		final boolean deleteById = this.nnnnnnnnn.deleteById(1232323);
+		System.out.println("deleteById = " + deleteById);
+	}
+
+	@Test
+	void existById() {
+		final boolean existById = this.nnnnnnnnn.existById(1);
+		System.out.println("existById = " + existById);
+	}
+
+	@Test
+	void findByAgeOrderByIdDescLimit() {
+
+		final List<NumberEntity> list = this.nnnnnnnnn.findByAgeOrderByIdDescLimit(200, 1,100);
+		System.out.println("list.size = " + list.size());
+		System.out.println("list = " + list);
+	}
+
+	@Test
+	void test_countingBy() {
+
+		final Long countingBy = this.nnnnnnnnn.countingByAge(200);
+		System.out.println("countingBy = " + countingBy);
+	}
+
+	@Test
+	void test_findByNameEndingWith() {
+
+		final List<NumberEntity> findByNameEndingWith = this.nnnnnnnnn.findByNameEndingWith("a");
+		System.out.println("findByNameEndingWith.size = " + findByNameEndingWith.size());
+		System.out.println("findByNameEndingWith = " + findByNameEndingWith);
+	}
+
+	@Test
 	void test_count1() {
 
 		final List<NumberEntity> findAll = this.nnnnnnnnn.findAll();
@@ -41,8 +93,7 @@ class SbZrepositoryTestApplicationTests {
 		final Long count = this.nnnnnnnnn.count();
 		assertThat(count.intValue() == findAll.size());
 
-		final NumberEntity entity = new NumberEntity()
-				;
+		final NumberEntity entity = new NumberEntity();
 		entity.setAge(2023023);
 		this.nnnnnnnnn.save(entity);
 
