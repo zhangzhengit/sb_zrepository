@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -390,11 +391,19 @@ public class ZRMain {
 		// findByUserId 分成[find, By, User, Id] ，从前往后计算是否sql关键字，否则按照entity字段处理
 
 		final HashSet<String> sqlKeyword = SqlPattern.SQL_KEYWORD;
+
+		// SQL关键字按从长到短排序，防止出现 Or优先于Order被替换掉，剩余 der
+		final ArrayList<String> skList = Lists.newArrayList(sqlKeyword);
+		skList.sort(Comparator.comparing(String::length).reversed());
+
 		String mn2 = methodName;
-		for (final String sk : sqlKeyword) {
+		for (final String sk : skList) {
 			mn2 = mn2.replace(sk, "-");
+			System.out.println("sk = " + sk);
+			System.out.println("mn2 = " + mn2);
 		}
-		final boolean removeAll = alList.removeAll(sqlKeyword);
+
+		final boolean removeAll = alList.removeAll(skList);
 		System.out.println("alList-removeAll-sqlKeyword = \n");
 		System.out.println(alList);
 
@@ -423,6 +432,10 @@ public class ZRMain {
 		System.out.println("sql = " + sql);
 		System.out.println("sqlA = " + sqlA);
 
+		// 仍然包含 @
+		if (sqlA.contains("@")) {
+			throw new IllegalArgumentException("请检查自定义方法名称，methodName = " + methodName);
+		}
 
 		return sqlA;
 
