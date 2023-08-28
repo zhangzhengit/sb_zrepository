@@ -950,7 +950,7 @@ public class ZRMain {
 	 */
 	private static Set<Class<?>> checkZEntityField() {
 		final Set<Class<?>> zeSet = Sets.newHashSet();
-		final Set<Class<?>> clsSet = ClassUtil.scanPackage();
+		final Set<Class<?>> clsSet = ClassUtil.scanPackage("com");
 		for (final Class<?> c : clsSet) {
 			final boolean isZE = c.isAnnotationPresent(ZEntity.class);
 			if (!isZE) {

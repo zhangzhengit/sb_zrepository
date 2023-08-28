@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import com.vo.ZRMain;
 import com.vo.ZRepository;
+import com.vo.conn.ZCPool;
 import com.vo.core.ZClass;
 import com.vo.core.ZLog2;
 
@@ -47,6 +48,10 @@ public class ZRepositoryStarter implements InstantiationAwareBeanPostProcessor {
 	}
 
 	private static void gZRepository(final Object bean, final String beanName) {
+		LOG.info("ZRepository开始初始化连接池");
+		final ZCPool instance = ZCPool.getInstance();
+		LOG.info("ZRepository始化连接池完成");
+
 		LOG.info("ZRepositoryStarter启动");
 		LOG.info("ZRepositoryStarter开始扫描[{}]的子接口", ZRepository.class.getCanonicalName());
 		final Set<Class<?>> zrSubclassSet = ZRMain.scanZRSubclass();
