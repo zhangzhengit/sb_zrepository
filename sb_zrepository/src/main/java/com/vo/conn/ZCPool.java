@@ -3,9 +3,12 @@ package com.vo.conn;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.vo.conn.ZDatasourceProperties.P;
 import com.vo.core.ZLog2;
 
@@ -33,6 +36,8 @@ public class ZCPool {
 				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "ZCPool.ZCPool()");
 
 		this.create();
+		final ZCPoolJob job = new ZCPoolJob();
+		job.start();
 	}
 
 
@@ -41,7 +46,6 @@ public class ZCPool {
 	public static ZCPool getInstance() {
 		return POOL;
 	}
-
 
 	void incrementWriteI() {
 		synchronized (this.incrementLock) {
@@ -107,13 +111,47 @@ public class ZCPool {
 		}
 	}
 
+	/**
+	 * 移除一个连接
+	 *
+	 * @param zConnection
+	 *
+	 */
+	public synchronized void removeZConnection(final ZConnection zConnection) {
+		final Optional<ZConnection> findAnyWRITE = this.writeVector.stream()
+				.filter(zc -> zc.getConnection() == zConnection.getConnection()).findAny();
+		if (findAnyWRITE.isPresent()) {
+			this.writeVector.remove(findAnyWRITE.get());
+		} else {
+			final Optional<ZConnection> findAnyREAD = this.readVector.stream()
+					.filter(zc -> zc.getConnection() == zConnection.getConnection()).findAny();
+			if (findAnyREAD.isPresent()) {
+				this.readVector.remove(findAnyREAD.get());
+			}
+		}
+	}
+
+	/**
+	 * 获取全部的连接，包括写连接和读连接
+	 *
+	 * @return
+	 *
+	 */
+	public synchronized ImmutableList<ZConnection> getAll() {
+		final List<ZConnection> r = Lists.newArrayList(this.writeVector);
+		r.addAll(this.readVector);
+		final ImmutableList<ZConnection> list = ImmutableList.copyOf(r);
+		return list;
+	}
+
 	private void create() {
 		System.out.println(
 				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "ZCPool.create()");
 
 		final ZDatasourceProperties zdp = ZDatasourcePropertiesLoader.getInstance();
 
-		this.newWriteConnection(zdp.getWrite());
+		final P write = zdp.getWrite();
+		this.newWriteConnection(write);
 
 		final Integer datasourceReadUrlCount = zdp.getDatasourceReadUrlCount();
 		final List<P> r = zdp.getReadList();
@@ -123,7 +161,7 @@ public class ZCPool {
 
 	}
 
-	private void newReadConnection(final ZDatasourceProperties.P p) {
+	public synchronized void newReadConnection(final ZDatasourceProperties.P p) {
 		final String url = p.getDatasourceUrl();
 		// FIXME 2023年6月16日 下午12:35:04 zhanghen:先暂时处理为从1到max
 		final int minConnection = 1;
@@ -134,12 +172,13 @@ public class ZCPool {
 
  		for (int i = minConnection; i <= maxConnection; i++) {
 			final ZConnection zConnection = ZConnection.newConnection(p);
+			zConnection.setMode(Mode.READ);
 			this.readVector.add(zConnection);
 			LOG.info("第{}个数据库[读]连接创建成功,ZConnection={}", i, zConnection);
 		}
 	}
 
-	private void newWriteConnection(final ZDatasourceProperties.P p) {
+	public synchronized void newWriteConnection(final ZDatasourceProperties.P p) {
 		final String url = p.getDatasourceUrl();
 		 // FIXME 2023年6月16日 下午12:35:04 zhanghen:先暂时处理为从1到max
 		 final int minConnection = 1;
@@ -150,6 +189,7 @@ public class ZCPool {
 
 	 	for (int i = minConnection; i <= maxConnection; i++) {
 			final ZConnection zConnection = ZConnection.newConnection(p);
+			zConnection.setMode(Mode.WRITE);
 			this.writeVector.add(zConnection);
 			LOG.info("第{}个数据库[写]连接创建成功,ZConnection={}", i, zConnection);
 		}

@@ -235,6 +235,8 @@ public class ZRMain {
 
 	public static Map<Class, ZClass> generateClassForZRSubinterfaceMap(final Set<Class<?>> zrSubclassSet) {
 
+		ZCPool.getInstance();
+
 		LOG.info("开始给[{}]的子接口生成实现类", ZRepository.class.getCanonicalName());
 
 		final Map<Class, ZClass> map = Maps.newConcurrentMap();

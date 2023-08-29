@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.liquibase.LiquibaseDataSource;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
@@ -32,6 +33,7 @@ public class ZDatasourceProperties {
 	@Data
 	@AllArgsConstructor
 	@NoArgsConstructor
+
 	public static class P {
 		private String datasourceUrl;
 		private String datasourceUsername;

@@ -1,8 +1,13 @@
 package com.vo.conn;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Objects;
+
+import com.vo.core.ZLog2;
 
 import lombok.Data;
 
@@ -16,10 +21,19 @@ import lombok.Data;
 @Data
 public class ZConnection {
 
+	private static final ZLog2 LOG = ZLog2.getInstance();
+
 	private Boolean busy;
+	private Mode mode;
+
+	private String driverClass;
+	private String url;
+	private String userName;
+	private String pwd;
 	private Connection connection;
 
-	public static ZConnection newConnection(final ZDatasourceProperties.P p) {
+
+	public static synchronized ZConnection newConnection(final ZDatasourceProperties.P p) {
 
 		try {
 			final String c = p.getDatasourceDriverClass();
@@ -33,18 +47,40 @@ public class ZConnection {
 		final String pwd = p.getDatasourcePassword();
 		try {
 			final Connection connection = DriverManager.getConnection(url, userName, pwd);
-
 			final ZConnection zc = new ZConnection();
+
+			zc.setDriverClass(p.getDatasourceDriverClass());
+			zc.setUrl(p.getDatasourceUrl());
+			zc.setUserName(p.getDatasourceUsername());
+			zc.setPwd(p.getDatasourcePassword());
+
 			zc.setBusy(false);
 			zc.setConnection(connection);
 
 			return zc;
 
 		} catch (final SQLException e) {
+			final String exceptionMessage = gExceptionMessage(e);
+			LOG.error("获取新连接失败,exceptionMessage={}", exceptionMessage);
 			e.printStackTrace();
 		}
 
 		return null;
+	}
+
+	public static String gExceptionMessage(final Throwable e) {
+
+		if (Objects.isNull(e)) {
+			return "";
+		}
+
+		final StringWriter stringWriter = new StringWriter();
+		final PrintWriter writer = new PrintWriter(stringWriter);
+		e.printStackTrace(writer);
+
+		final String eMessage = stringWriter.toString();
+
+		return eMessage;
 	}
 
 }
