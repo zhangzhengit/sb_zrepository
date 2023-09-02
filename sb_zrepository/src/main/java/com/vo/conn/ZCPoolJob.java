@@ -1,13 +1,9 @@
 package com.vo.conn;
 
-import java.nio.channels.SeekableByteChannel;
-import java.security.KeyStore.PrivateKeyEntry;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import org.apache.catalina.webresources.CachedResource;
 
 import com.google.common.collect.ImmutableList;
 import com.vo.conn.ZDatasourceProperties.P;

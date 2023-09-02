@@ -321,6 +321,8 @@ public class SU {
 			 statement = connection.createStatement();
 
 			 final boolean execute = statement.execute(s,Statement.RETURN_GENERATED_KEYS);
+
+
 //			final int executeUpdate = statement.executeUpdate(s, Statement.RETURN_GENERATED_KEYS);
 			if (ZDP.getShowSql()) {
 				LOG.info("[{}],[{}]", sql2, t);
@@ -329,13 +331,17 @@ public class SU {
 			rs = statement.getGeneratedKeys();
 			if (rs.next()) {
 				final Object id = rs.getObject(1);
-				connection.commit();
 				return id;
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
 		} finally {
 			System.out.println("save-} finally {");
+			try {
+				connection.commit();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
 			instance.returnZConnection(zc);
 			try {
 				if (rs != null) {
