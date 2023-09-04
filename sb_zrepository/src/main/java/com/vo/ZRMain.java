@@ -1015,31 +1015,51 @@ public class ZRMain {
 
 		final String name = zidList.get(0).getName();
 
-		final ZCPool instance = ZCPool.getInstance();
+		connnection(typeClass, name, ZCPool.getInstance().getZConnection(Mode.READ));
 
-		final ImmutableList<ZConnection> all = instance.getAll();
-		final ZConnection zConnectionREAD = instance.getZConnection(Mode.READ);
+		connnection(typeClass, name, ZCPool.getInstance().getZConnection(Mode.WRITE));
+
+		checkZEntityFiled(typeClass);
+
+	}
+
+	/**
+	 * 校验 @ZEntity 类里的属性，必须和表的列名和类型匹配
+	 *
+	 * @param typeClass
+	 *
+	 */
+	private static void checkZEntityFiled(final Class<?> typeClass) {
+
+		final ZConnection zConnection = ZCPool.getInstance().getZConnection(Mode.READ);
+
+		final String tableName = typeClass.getAnnotation(ZEntity.class).tableName();
+
+		final Field[] fs = typeClass.getDeclaredFields();
+
 		try {
-			final DatabaseMetaData metaDataREAD = zConnectionREAD.getConnection().getMetaData();
-			c(typeClass, name, metaDataREAD);
+			final DatabaseMetaData metaData = zConnection.getConnection().getMetaData();
+
+			try (ResultSet columns = metaData.getColumns(null, null, tableName, null)) {
+				System.out.println("tablename = " + tableName);
+				while (columns.next()) {
+					final String columnName = columns.getString("COLUMN_NAME");
+					final String columnType = columns.getString("TYPE_NAME");
+
+					System.out.println("Column Name: " + columnName);
+					System.out.println("Column Type: " + columnType);
+					System.out.println("-----------------------");
+
+					// FIXME 2023年9月4日 下午8:09:58 zhanghen:  TODO 写一个db类型和java类型对应关系，所有typeClass.field都必须名称和类型完全匹配，否则抛异常
+				}
+			}
+
 		} catch (final SQLException e) {
 			e.printStackTrace();
-		} finally {
-			ZCPool.getInstance().returnZConnection(zConnectionREAD);
-		}
-
-		final ZConnection zConnectionWRITE = ZCPool.getInstance().getZConnection(Mode.WRITE);
-		try {
-
-			final DatabaseMetaData metaDataWRITE = zConnectionWRITE.getConnection().getMetaData();
-			c(typeClass, name, metaDataWRITE);
-		} catch (final SQLException e) {
-			e.printStackTrace();
-		} finally {
-			ZCPool.getInstance().returnZConnection(zConnectionWRITE);
 		}
 
 	}
+
 
 
 	private static void c(final Class<?> typeClass, final String name, final DatabaseMetaData metaDataREAD) {
@@ -1054,7 +1074,7 @@ public class ZRMain {
 			}
 
 			final String columnName = primaryKeys.getString("COLUMN_NAME");
-			System.out.println("tableName = " + tableName + "\t" + "主键列名：" + columnName);
+//			System.out.println("tableName = " + tableName + "\t" + "主键列名：" + columnName);
 			if (!Objects.equals(name, columnName)) {
 				throw new IllegalArgumentException(ZEntity.class.getSimpleName() + " 类型 " + typeClass.getSimpleName()
 						+ " " + ZID.class.getSimpleName() + " 字段名称与数据库主键名称不一致，" + ZID.class.getSimpleName() + " 名称："
@@ -1076,5 +1096,17 @@ public class ZRMain {
 	}
 
 	static HashSet<Class> cc = Sets.newHashSet();
+
+	private static void connnection(final Class<?> typeClass, final String name, final ZConnection zConnection) {
+		try {
+
+			final DatabaseMetaData metaDataWRITE = zConnection.getConnection().getMetaData();
+			c(typeClass, name, metaDataWRITE);
+		} catch (final SQLException e) {
+			e.printStackTrace();
+		} finally {
+			ZCPool.getInstance().returnZConnection(zConnection);
+		}
+	}
 
 }
