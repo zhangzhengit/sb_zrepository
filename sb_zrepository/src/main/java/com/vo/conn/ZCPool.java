@@ -26,8 +26,6 @@ public class ZCPool {
 	private final Vector<ZConnection> writeVector = new java.util.Vector<>();
 	private final Vector<ZConnection> readVector = new java.util.Vector<>();
 
-	private final Object lock  = new Object();
-
 	private final AtomicInteger writeI = new AtomicInteger();
 	private final AtomicInteger readI = new AtomicInteger();
 
@@ -36,12 +34,12 @@ public class ZCPool {
 				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "ZCPool.ZCPool()");
 
 		this.create();
+
 		final ZCPoolJob job = new ZCPoolJob();
 		job.start();
 	}
 
-
-	static final ZCPool POOL = new ZCPool();
+	private static final ZCPool POOL = new ZCPool();
 
 	public static ZCPool getInstance() {
 		return POOL;
@@ -118,15 +116,19 @@ public class ZCPool {
 	 *
 	 */
 	public synchronized void removeZConnection(final ZConnection zConnection) {
+		LOG.warn("开始删除一个连接ZConnection={}", zConnection);
+
 		final Optional<ZConnection> findAnyWRITE = this.writeVector.stream()
 				.filter(zc -> zc.getConnection() == zConnection.getConnection()).findAny();
 		if (findAnyWRITE.isPresent()) {
 			this.writeVector.remove(findAnyWRITE.get());
+			LOG.warn("成功删除一个[写]连接ZConnection={}", zConnection);
 		} else {
 			final Optional<ZConnection> findAnyREAD = this.readVector.stream()
 					.filter(zc -> zc.getConnection() == zConnection.getConnection()).findAny();
 			if (findAnyREAD.isPresent()) {
 				this.readVector.remove(findAnyREAD.get());
+				LOG.warn("成功删除一个[读]连接ZConnection={}", zConnection);
 			}
 		}
 	}
@@ -161,7 +163,7 @@ public class ZCPool {
 
 	}
 
-	public synchronized void newReadConnection(final ZDatasourceProperties.P p) {
+	private synchronized void newReadConnection(final ZDatasourceProperties.P p) {
 		final String url = p.getDatasourceUrl();
 		// FIXME 2023年6月16日 下午12:35:04 zhanghen:先暂时处理为从1到max
 		final int minConnection = 1;
@@ -175,6 +177,7 @@ public class ZCPool {
 			zConnection.setMode(Mode.READ);
 			this.readVector.add(zConnection);
 			LOG.info("第{}个数据库[读]连接创建成功,ZConnection={}", i, zConnection);
+			LOG.info("当前已创建[读]连接数={}", this.readVector.size());
 		}
 	}
 

@@ -1,10 +1,10 @@
 package com.vo;
 
-import java.awt.Menu;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -18,16 +18,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.omg.CORBA.REBIND;
-import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchProperties;
-import org.springframework.web.servlet.RequestToViewNameTranslator;
-
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -45,10 +42,9 @@ import com.vo.core.ZMethod;
 import com.vo.core.ZMethodArg;
 import com.vo.core.ZPackage;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.StrUtil;
-import io.lettuce.core.AbstractRedisAsyncCommands;
-import reactor.core.Fuseable.SynchronousSubscription;
 
 /**
  *
@@ -60,9 +56,10 @@ import reactor.core.Fuseable.SynchronousSubscription;
  */
 public class ZRMain {
 
+	private static final ZLog2 LOG = ZLog2.getInstance();
+
 	public static final String _Z_CLASS = "_ZClass";
 	// private static final ZCPool INSTANCE = ZCPool.getInstance();
-	private static final ZLog2 LOG = ZLog2.getInstance();
 
 //	public static void main(final String[] args) throws SQLException, InstantiationException, IllegalAccessException, NoSuchFieldException, SecurityException {
 //		start();
@@ -346,6 +343,9 @@ public class ZRMain {
 				try {
 					final Class<?> typeClass = Class.forName(type);
 					final ZEntity zEntity = typeClass.getAnnotation(ZEntity.class);
+
+					checkZEntityZID(typeClass);
+
 					// 2
 					final String zrSubClassName = zrSubClass.getCanonicalName();
 					final String methodName = m.getName();
@@ -976,6 +976,105 @@ public class ZRMain {
 		return zeSet;
 	}
 
+	/**
+	 * 校验 @ZEntity 类必须有 @ZID 注解，并且字段是主键
+	 *
+	 * @param typeClass
+	 * @param p TODO
+	 *
+	 */
+	private synchronized static void checkZEntityZID(final Class<?> typeClass) {
 
+		if (cc.contains(typeClass)) {
+			return;
+		}
+		cc.add(typeClass);
+
+		final ZEntity ze = typeClass.getAnnotation(ZEntity.class);
+		if (ze == null) {
+			return;
+		}
+
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "ZRMain.checkZEntityZID()");
+
+		final Field[] fs = typeClass.getDeclaredFields();
+		final List<Field> zidList = Lists.newArrayList(fs).stream().filter(f -> f.isAnnotationPresent(ZID.class))
+				.collect(Collectors.toList());
+
+		if (CollUtil.isEmpty(zidList)) {
+			throw new IllegalArgumentException(ZEntity.class.getSimpleName() + " 类型 " + typeClass.getSimpleName()
+					+ " 必须有 " + ZID.class.getSimpleName() + " 字段");
+		}
+
+		if (zidList.size() != 1) {
+			final String fsA = zidList.stream().map(f -> f.getName()).collect(Collectors.joining(","));
+			throw new IllegalArgumentException(ZEntity.class.getSimpleName() + " 类型 " + typeClass.getSimpleName()
+					+ " 只能有一个 " + ZID.class.getSimpleName() + " 字段，现有有两个：" + fsA);
+		}
+
+		final String name = zidList.get(0).getName();
+
+		final ZCPool instance = ZCPool.getInstance();
+
+		final ImmutableList<ZConnection> all = instance.getAll();
+		final ZConnection zConnectionREAD = instance.getZConnection(Mode.READ);
+		try {
+			final DatabaseMetaData metaDataREAD = zConnectionREAD.getConnection().getMetaData();
+			c(typeClass, name, metaDataREAD);
+		} catch (final SQLException e) {
+			e.printStackTrace();
+		} finally {
+			ZCPool.getInstance().returnZConnection(zConnectionREAD);
+		}
+
+		final ZConnection zConnectionWRITE = ZCPool.getInstance().getZConnection(Mode.WRITE);
+		try {
+
+			final DatabaseMetaData metaDataWRITE = zConnectionWRITE.getConnection().getMetaData();
+			c(typeClass, name, metaDataWRITE);
+		} catch (final SQLException e) {
+			e.printStackTrace();
+		} finally {
+			ZCPool.getInstance().returnZConnection(zConnectionWRITE);
+		}
+
+	}
+
+
+	private static void c(final Class<?> typeClass, final String name, final DatabaseMetaData metaDataREAD) {
+		ResultSet primaryKeys = null;
+		try {
+
+			final String tableName = typeClass.getAnnotation(ZEntity.class).tableName();
+			primaryKeys = metaDataREAD.getPrimaryKeys(null, null, tableName);
+			if (!primaryKeys.next()) {
+				throw new IllegalArgumentException(ZEntity.class.getSimpleName() + " 类型 " + typeClass.getSimpleName()
+						+ " " + ZID.class.getSimpleName() + " 字段 " + name + " 在数据库中不存在");
+			}
+
+			final String columnName = primaryKeys.getString("COLUMN_NAME");
+			System.out.println("tableName = " + tableName + "\t" + "主键列名：" + columnName);
+			if (!Objects.equals(name, columnName)) {
+				throw new IllegalArgumentException(ZEntity.class.getSimpleName() + " 类型 " + typeClass.getSimpleName()
+						+ " " + ZID.class.getSimpleName() + " 字段名称与数据库主键名称不一致，" + ZID.class.getSimpleName() + " 名称："
+						+ name + "，数据库主键名称：" + columnName);
+			}
+
+		} catch (final SQLException e) {
+			e.printStackTrace();
+		} finally {
+			if (primaryKeys != null) {
+				try {
+					primaryKeys.close();
+				} catch (final SQLException e) {
+					e.printStackTrace();
+				}
+			}
+
+		}
+	}
+
+	static HashSet<Class> cc = Sets.newHashSet();
 
 }
