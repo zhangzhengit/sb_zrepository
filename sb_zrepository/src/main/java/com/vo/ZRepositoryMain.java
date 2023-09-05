@@ -673,6 +673,10 @@ public class ZRepositoryMain {
 		case "deleteById":
 			return "return " + SU.class.getCanonicalName() + ".deleteById(" + modeString + ", id,classType,sql);";
 
+		case "deleteByIdIn":
+			return "return " + SU.class.getCanonicalName() + ".deleteByIdIn(" + modeString + ", idList,classType,sql);";
+
+
 		case "deleteAll":
 
 			return "return " + SU.class.getCanonicalName() + ".deleteAll(" + modeString + ", classType,sql);";

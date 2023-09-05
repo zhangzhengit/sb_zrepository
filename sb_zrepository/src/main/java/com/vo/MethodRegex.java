@@ -27,6 +27,7 @@ public class MethodRegex {
 	public static final String GROUP_CountingByXXX = "countingBy(.*)";
 	public static final String GROUP_EXISTBYId = "existById";
 	public static final String GROUP_DeleteById = "deleteById";
+	public static final String GROUP_DeleteByIdIn = "deleteByIdIn";
 	public static final String GROUP_SAVEALL = "saveAll";
 	public static final String GROUP_SAVE = "save";
 
@@ -87,6 +88,7 @@ public class MethodRegex {
 	public 	static final String countingByXXX = GROUP_CountingByXXX;
 	public 	static final String existById = GROUP_EXISTBYId;
 	public 	static final String deleteById = GROUP_DeleteById;
+	public 	static final String deleteByIdIn = GROUP_DeleteByIdIn;
 	public 	static final String deleteAll = "deleteAll";
 
 	public 	static final String findByXXLike = GROUP_findByXXLike;
@@ -139,6 +141,9 @@ public class MethodRegex {
 		// deleteById
 		REGEX_MAP_DELETEBYID.put(deleteById, "delete from TABLE_NAME where @ = ?");
 		REGEX_MAP_DELETEBYID.put(deleteAll, "delete from TABLE_NAME");
+
+		// deleteByIdIn
+		REGEX_MAP_DELETEBYID.put(deleteByIdIn, "delete from TABLE_NAME where @ in (?)");
 
 		// saveAll
 		REGEX_MAP_SAVEALL.put(saveAll, "insert into TABLE_NAME (F) values(A)");

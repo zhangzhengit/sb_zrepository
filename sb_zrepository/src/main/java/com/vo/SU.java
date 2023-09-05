@@ -192,6 +192,68 @@ public class SU {
 		return false;
 	}
 
+	public static <T> boolean deleteByIdIn(final Mode mode, final List<Object> idList, final Class<T> cls, final String sql) {
+		System.out.println(
+				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "SU.deleteByIdIn()");
+
+		final ZConnection zc = getZC(mode);
+		final Connection connection = zc.getConnection();
+		try {
+			connection.setAutoCommit(false);
+		} catch (final SQLException e1) {
+			e1.printStackTrace();
+		}
+
+		PreparedStatement ps = null;
+
+		try {
+
+			final String params = String.join(",", Collections.nCopies(idList.size(), "?"));
+
+			final String sqlT = sql.replace("?", params);
+
+			ps = connection.prepareStatement(sqlT);
+
+			int index = 1;
+			for (final Object id : idList) {
+				ps.setObject(index, id);
+				index++;
+			}
+
+			if (ZDP.getShowSql()) {
+				LOG.info("[{}],[{}]", sqlT, idList);
+			}
+
+			final int executeUpdate = ps.executeUpdate();
+
+			return executeUpdate >= 1;
+
+		} catch (SQLException | SecurityException e) {
+			e.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
+		} finally {
+			try {
+				connection.commit();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
+			instance.returnZConnection(zc);
+			try {
+				if (ps != null) {
+					ps.close();
+				}
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return false;
+	}
+
 	public static <T> boolean deleteById(final Mode mode, final Object id, final Class<T> cls, final String sql) {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();

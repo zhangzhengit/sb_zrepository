@@ -35,6 +35,23 @@ class SbZrepositoryTestApplicationTests {
 	@Autowired
 	NumberZRepository nnnnnnnnn;
 
+	@Test
+	void deleteByIdIn1() {
+
+		final int n = 12220;
+
+		final ArrayList<NumberEntity> sl = Lists.newArrayList();
+		for (int i = 1; i <= n; i++) {
+			final NumberEntity entity = new NumberEntity();
+			entity.setAge(12345);
+			sl.add(entity);
+
+		}
+
+		final List<Integer> saveAll = this.nnnnnnnnn.saveAll(sl);
+		System.out.println("saveAll.size = " + saveAll.size());
+		final boolean deleteByIdIn = this.nnnnnnnnn.deleteByIdIn(saveAll);
+	}
 
 	@Test
 	void update2() {

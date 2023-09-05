@@ -48,6 +48,8 @@ public interface ZRepository<T, ID> {
 	 */
 	boolean deleteById(ID id);
 
+	boolean deleteByIdIn(List<ID> idList);
+
 	/**
 	 * 删除全部的对象
 	 *
