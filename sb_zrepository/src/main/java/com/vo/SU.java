@@ -1,6 +1,8 @@
 package com.vo;
 
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -235,6 +237,14 @@ public class SU {
 			return Collections.emptyList();
 		}
 
+		final Field[] declaredFields = cls.getDeclaredFields();
+		final Optional<Field> zid = Lists.newArrayList(declaredFields).stream()
+				.filter(f -> f.isAnnotationPresent(ZID.class)).findAny();
+		if (!zid.isPresent()) {
+			throw new IllegalArgumentException(
+					"类中无 " + ZID.class.getSimpleName() + " 字段，cls = " + cls.getCanonicalName());
+		}
+
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
@@ -280,10 +290,36 @@ public class SU {
 			ps.executeBatch();
 
 			rs = ps.getGeneratedKeys();
+
+
+			final Field idField = zid.get();
+			final Class<?> type = idField.getType();
+
 			final List<Object> r = new ArrayList<>();
 			while (rs.next()) {
+				// 类型转换
 				final Object id = rs.getObject(1);
-				r.add(id);
+				if (type.getCanonicalName().equals(String.class.getCanonicalName())) {
+					r.add(String.valueOf(id));
+				} else if (type.getCanonicalName().equals(Integer.class.getCanonicalName())) {
+					r.add(Integer.valueOf(String.valueOf(id)));
+				} else if (type.getCanonicalName().equals(Byte.class.getCanonicalName())) {
+					r.add(Byte.valueOf(String.valueOf(id)));
+				} else if (type.getCanonicalName().equals(Short.class.getCanonicalName())) {
+					r.add(Short.valueOf(String.valueOf(id)));
+				} else if (type.getCanonicalName().equals(Long.class.getCanonicalName())) {
+					r.add(Long.valueOf(String.valueOf(id)));
+				} else if (type.getCanonicalName().equals(Float.class.getCanonicalName())) {
+					r.add(Float.valueOf(String.valueOf(id)));
+				} else if (type.getCanonicalName().equals(Double.class.getCanonicalName())) {
+					r.add(Double.valueOf(String.valueOf(id)));
+				} else if (type.getCanonicalName().equals(BigInteger.class.getCanonicalName())) {
+					r.add(new BigInteger(String.valueOf(id)));
+				} else if (type.getCanonicalName().equals(BigDecimal.class.getCanonicalName())) {
+					r.add(new BigDecimal(String.valueOf(id)));
+				} else if (type.getCanonicalName().equals(Character.class.getCanonicalName())) {
+					r.add(Character.valueOf(String.valueOf(id).charAt(0)));
+				}
 			}
 			return r;
 

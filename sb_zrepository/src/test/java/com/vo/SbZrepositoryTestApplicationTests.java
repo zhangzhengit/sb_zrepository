@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
+import org.omg.Messaging.SyncScopeHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -30,6 +31,31 @@ class SbZrepositoryTestApplicationTests {
 
 	@Autowired
 	NumberZRepository nnnnnnnnn;
+
+	@Test
+	void saveAll() {
+
+		final int n = 1420;
+
+		final ArrayList<NumberEntity> sl = Lists.newArrayList();
+		for (int i = 1; i <= n; i++) {
+			final NumberEntity entity = new NumberEntity();
+			entity.setAge(33333333);
+			sl.add(entity);
+		}
+
+		final List<Integer> saveAll = this.nnnnnnnnn.saveAll(sl);
+		System.out.println("saveAll = " + saveAll);
+		for (final Integer id : saveAll) {
+			final NumberEntity e = this.nnnnnnnnn.findById(id);
+			assertThat(e.getId().equals(id));
+		}
+
+		final List<NumberEntity> fl = this.nnnnnnnnn.findByIdIn(saveAll);
+		final boolean allMatch = fl.stream().allMatch(e ->e.getAge().equals(33333333));
+		assertThat(allMatch);
+	}
+
 
 	@Test
 	void update2() {
