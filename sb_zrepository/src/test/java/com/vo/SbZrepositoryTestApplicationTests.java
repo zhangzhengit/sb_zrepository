@@ -2,20 +2,23 @@ package com.vo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
-import org.omg.Messaging.SyncScopeHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.vo.test.NumberEntity;
 import com.vo.test.NumberZRepository;
+import com.votool.ze.AbstractZETask;
 import com.votool.ze.ZE;
 import com.votool.ze.ZES;
+import com.votool.ze.ZETaskResult;
 
 import cn.hutool.core.lang.UUID;
 
@@ -32,35 +35,13 @@ class SbZrepositoryTestApplicationTests {
 	@Autowired
 	NumberZRepository nnnnnnnnn;
 
-	@Test
-	void saveAll() {
-
-		final int n = 1420;
-
-		final ArrayList<NumberEntity> sl = Lists.newArrayList();
-		for (int i = 1; i <= n; i++) {
-			final NumberEntity entity = new NumberEntity();
-			entity.setAge(33333333);
-			sl.add(entity);
-		}
-
-		final List<Integer> saveAll = this.nnnnnnnnn.saveAll(sl);
-		System.out.println("saveAll = " + saveAll);
-		for (final Integer id : saveAll) {
-			final NumberEntity e = this.nnnnnnnnn.findById(id);
-			assertThat(e.getId().equals(id));
-		}
-
-		final List<NumberEntity> fl = this.nnnnnnnnn.findByIdIn(saveAll);
-		final boolean allMatch = fl.stream().allMatch(e ->e.getAge().equals(33333333));
-		assertThat(allMatch);
-	}
-
 
 	@Test
 	void update2() {
 
-		final int n = 1420;
+		this.nnnnnnnnn.deleteAll();
+
+		final int n = 120;
 
 		final ArrayList<NumberEntity> sl = Lists.newArrayList();
 		for (int i = 1; i <= n; i++) {
@@ -68,11 +49,20 @@ class SbZrepositoryTestApplicationTests {
 			entity.setAge(12345);
 			final NumberEntity save = this.nnnnnnnnn.save(entity);
 			sl.add(save);
+//			if(save == null) {
+//				System.out.println("saveIsNUll,save = " + save);
+//			}
+//			if (save.getId() == null) {
+//				System.out.println("saveIdIsNUll,save = " + save);
+//			}
 		}
 
 		assertThat(sl.size() == n);
 
-		final List<NumberEntity> findByIdIn = this.nnnnnnnnn.findByIdIn(sl.stream().map(e -> e.getId()).collect(Collectors.toList()));
+
+
+		final List<Integer> idF = sl.stream().map(e -> e.getId()).collect(Collectors.toList());
+		final List<NumberEntity> findByIdIn = this.nnnnnnnnn.findByIdIn(idF);
 		assertThat(findByIdIn.size() == n);
 
 		for (final NumberEntity e1 : findByIdIn) {
@@ -120,6 +110,7 @@ class SbZrepositoryTestApplicationTests {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "SbZrepositoryTestApplicationTests.update1()");
 
+		this.nnnnnnnnn.deleteAll();
 
 		final NumberEntity entity = new NumberEntity();
 		entity.setAge(12345);
@@ -136,6 +127,8 @@ class SbZrepositoryTestApplicationTests {
 
 	@Test
 	void findByAgeNot() {
+		this.nnnnnnnnn.deleteAll();
+
 		final List<NumberEntity> not200ageList = this.nnnnnnnnn.findByAgeNot(200);
 		System.out.println("not200ageList.size = " + not200ageList.size());
 		System.out.println("not200ageList = " + not200ageList);
@@ -153,18 +146,21 @@ class SbZrepositoryTestApplicationTests {
 
 	@Test
 	void deleteById() {
+		this.nnnnnnnnn.deleteAll();
 		final boolean deleteById = this.nnnnnnnnn.deleteById(1232323);
 		System.out.println("deleteById = " + deleteById);
 	}
 
 	@Test
 	void existById() {
+		this.nnnnnnnnn.deleteAll();
 		final boolean existById = this.nnnnnnnnn.existById(1);
 		System.out.println("existById = " + existById);
 	}
 
 	@Test
 	void findByAgeOrderByIdDescLimit() {
+		this.nnnnnnnnn.deleteAll();
 
 		final List<NumberEntity> list = this.nnnnnnnnn.findByAgeOrderByIdDescLimit(200, 1,100);
 		System.out.println("list.size = " + list.size());
@@ -173,6 +169,7 @@ class SbZrepositoryTestApplicationTests {
 
 	@Test
 	void test_countingBy() {
+		this.nnnnnnnnn.deleteAll();
 
 		final Long countingBy = this.nnnnnnnnn.countingByAge(200);
 		System.out.println("countingBy = " + countingBy);
@@ -180,6 +177,7 @@ class SbZrepositoryTestApplicationTests {
 
 	@Test
 	void test_findByNameEndingWith() {
+		this.nnnnnnnnn.deleteAll();
 
 		final List<NumberEntity> findByNameEndingWith = this.nnnnnnnnn.findByNameEndingWith("a");
 		System.out.println("findByNameEndingWith.size = " + findByNameEndingWith.size());
@@ -188,6 +186,10 @@ class SbZrepositoryTestApplicationTests {
 
 	@Test
 	void test_count1() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.test_count1()");
+
+		this.nnnnnnnnn.deleteAll();
 
 		final List<NumberEntity> findAll = this.nnnnnnnnn.findAll();
 		System.out.println("findAll.size = " + findAll.size());
@@ -202,33 +204,47 @@ class SbZrepositoryTestApplicationTests {
 		final Long c2 = this.nnnnnnnnn.count();
 		assertThat(c2 == count + 1L);
 
+		this.nnnnnnnnn.deleteAll();
 	}
 
 
 	@Test
 	void test_findAll1() {
+		this.nnnnnnnnn.deleteAll();
 
 		final List<NumberEntity> findAll = this.nnnnnnnnn.findAll();
 		System.out.println("findAll.size = " + findAll.size());
 		System.out.println("findAll = " + findAll);
+
+		this.nnnnnnnnn.deleteAll();
 	}
 
 	@Test
 	void test_findByXXLike_2() {
+		this.nnnnnnnnn.deleteAll();
+
 		final List<NumberEntity> list = this.nnnnnnnnn.findByNameLike("a");
 		System.out.println("list.size = " + list.size());
 		System.out.println("list = " + list);
+
+		this.nnnnnnnnn.deleteAll();
 	}
 
 	@Test
 	void test_findByXXLike_1() {
+		this.nnnnnnnnn.deleteAll();
+
 		final List<NumberEntity> list = this.nnnnnnnnn.findByNameStartingWith("1a");
 		System.out.println("list.size = " + list.size());
 		System.out.println("list = " + list);
+
+		this.nnnnnnnnn.deleteAll();
 	}
 
 	@Test
 	void test_findByUserIdAndName2() {
+
+		this.nnnnnnnnn.deleteAll();
 
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "SbZrepositoryTestApplicationTests.test_findByUserIdAndName2()");
@@ -246,12 +262,15 @@ class SbZrepositoryTestApplicationTests {
 		assertThat(l2x.size() == 1);
 		System.out.println("l2x = " + l2x);
 
-
+		this.nnnnnnnnn.deleteAll();
 
 
 	}
 	@Test
 	void test_findByUserIdAndName() {
+
+		this.nnnnnnnnn.deleteAll();
+
 		final NumberEntity e = new NumberEntity();
 		e.setName(UUID.randomUUID().toString());
 
@@ -260,11 +279,16 @@ class SbZrepositoryTestApplicationTests {
 		System.out.println("save.id = " + save.getId());
 		assertThat(save.getName().equals(e.getName()));
 
+		this.nnnnnnnnn.deleteAll();
+
 	}
 
 
 	@Test
 	void test_save4() {
+
+		this.nnnnnnnnn.deleteAll();
+
 		final int id = 1;
 		final NumberEntity entity = this.nnnnnnnnn.findById(id);
 		assertThat(entity == null || entity.getId() == id);
@@ -281,6 +305,8 @@ class SbZrepositoryTestApplicationTests {
 
 		}
 
+		this.nnnnnnnnn.deleteAll();
+
 	}
 
 	/**
@@ -290,13 +316,19 @@ class SbZrepositoryTestApplicationTests {
 	 */
 	@Test
 	void test_save3() {
-		final int n = 2000;
+
+		this.nnnnnnnnn.deleteAll();
+
+		final int n = 200;
 		final AtomicInteger saveA = new AtomicInteger();
 		for (int id = 1; id <= n; id++) {
 
 			final NumberEntity entity = this.nnnnnnnnn.findById(id);
 			assertThat(entity == null || entity.getId() == id);
 		}
+
+		this.nnnnnnnnn.deleteAll();
+
 	}
 
 	/**
@@ -305,6 +337,8 @@ class SbZrepositoryTestApplicationTests {
 	 */
 	@Test
 	void test_save2() {
+
+		this.nnnnnnnnn.deleteAll();
 
 		final ZE ze = ZES.newZE();
 
@@ -332,7 +366,14 @@ class SbZrepositoryTestApplicationTests {
 		final List<Integer> idList = range.mapToObj(i -> i).collect(Collectors.toList());
 
 		final List<NumberEntity> ll = this.nnnnnnnnn.findByIdIn(idList);
+		if(ll.size() != n) {
+			System.out.println("idList.size = " + idList.size());
+			System.out.println("ll.size = " + ll.size());
+			System.out.println("n = " + n);
+		}
 		assertThat(ll.size() == n);
+
+		this.nnnnnnnnn.deleteAll();
 
 
 //		this.numberZRepository.deleteAll();
@@ -348,6 +389,8 @@ class SbZrepositoryTestApplicationTests {
 	@Test
 	void test_save1() {
 
+		this.nnnnnnnnn.deleteAll();
+
 		final NumberEntity numberEntity = new NumberEntity();
 		numberEntity.setId(1);
 		numberEntity.setUserId(200);
@@ -360,7 +403,15 @@ class SbZrepositoryTestApplicationTests {
 
 		final NumberEntity ue = this.nnnnnnnnn.findById(numberEntity.getId());
 		System.out.println("ue = " + ue);
+		if(ue.getUserId() != 400) {
+			// FIXME 2023年9月6日 上午2:23:17 zhanghen: debug
+			final int xn  = 230;
+		}
+		System.out.println("ue.getUserId() = " + ue.getUserId());
 		assertThat(ue.getUserId() == 400);
+
+
+		this.nnnnnnnnn.deleteAll();
 
 	}
 
@@ -369,4 +420,165 @@ class SbZrepositoryTestApplicationTests {
 			throw new IllegalArgumentException("断言错误");
 		}
 	}
+
+	@Test
+	void saveAll2() {
+
+		this.nnnnnnnnn.deleteAll();
+
+		final ZE ze = ZES.newZE(11);
+
+		final ArrayList<AbstractZETask<List<Integer>>> taskList = Lists.newArrayList();
+
+		final Set<Integer> idSet = Sets.newConcurrentHashSet();
+
+		final int x = 10;
+		final int n = 10;
+		for (int k = 1; k <= x; k++) {
+			final AbstractZETask<List<Integer>> task = new AbstractZETask<List<Integer>>() {
+
+				@Override
+				public List<Integer> call() {
+					final ArrayList<NumberEntity> sl = Lists.newArrayList();
+					for (int i = 1; i <= n; i++) {
+						final NumberEntity entity = new NumberEntity();
+						entity.setAge(33333333);
+						sl.add(entity);
+					}
+
+					final long t1 = System.currentTimeMillis();
+					final List<Integer> saveAll = SbZrepositoryTestApplicationTests.this.nnnnnnnnn.saveAll(sl);
+					idSet.addAll(saveAll);
+					final long t2 = System.currentTimeMillis();
+					System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+							+ "saveAll-ms = " + (t2 - t1));
+					// TODO Auto-generated method stub
+					return saveAll;
+				}
+			};
+
+			taskList.add(task);
+
+		}
+
+		final List<ZETaskResult<List<Integer>>> submitInQueue = ze.submitInQueue(taskList);
+
+		final long t1 = System.currentTimeMillis();
+		for (final ZETaskResult<List<Integer>> zeTaskResult : submitInQueue) {
+			final List<Integer> v = zeTaskResult.get();
+			System.out.println("v = " + v);
+		}
+		final long t2 = System.currentTimeMillis();
+
+		assertThat(idSet.size() == x * n);
+		System.out.println("idSet.size() == x * n - OK");
+		System.out.println("submitInQueue-ms = " + (t2 - t1));
+
+
+		final ArrayList<AbstractZETask<Boolean>> taskDDDList = Lists.newArrayList();
+
+
+		for (final Integer id : idSet) {
+			final AbstractZETask<Boolean> task = new AbstractZETask<Boolean>() {
+
+				@Override
+				public Boolean call() {
+					final boolean deleteById = SbZrepositoryTestApplicationTests.this.nnnnnnnnn.deleteById(id);
+					return deleteById;
+				}
+			};
+			taskDDDList.add(task);
+		}
+
+		final List<ZETaskResult<Boolean>> submitInQueue2 = ze.submitInQueue(taskDDDList);
+		int okC = 0;
+		for (final ZETaskResult<Boolean> zeTaskResult : submitInQueue2) {
+			final Boolean v = zeTaskResult.get();
+			System.out.println("delete-v = " + v);
+			if(v) {
+				okC++;
+			}
+		}
+
+		final List<NumberEntity> findByIdIn = this.nnnnnnnnn.findByIdIn(Lists.newArrayList(idSet));
+		System.out.println("idSet = " + idSet);
+		System.out.println("idSet.size = " + idSet.size());
+		System.out.println("okC = " + okC);
+		System.out.println("findByIdIn.size = " + findByIdIn.size());
+		assertThat(findByIdIn.size() == 0);
+
+		this.nnnnnnnnn.deleteAll();
+
+
+	}
+
+	@Test
+	void saveAll() {
+
+		this.nnnnnnnnn.deleteAll();
+
+		final int n = 2120;
+
+		final ArrayList<NumberEntity> sl = Lists.newArrayList();
+		for (int i = 1; i <= n; i++) {
+			final NumberEntity entity = new NumberEntity();
+			entity.setAge(33333333);
+			sl.add(entity);
+		}
+
+		final List<Integer> saveAll = this.nnnnnnnnn.saveAll(sl);
+		System.out.println("saveAll = " + saveAll);
+		for (final Integer id : saveAll) {
+			final NumberEntity e = this.nnnnnnnnn.findById(id);
+			assertThat(e.getId().equals(id));
+		}
+
+		final List<NumberEntity> fl = this.nnnnnnnnn.findByIdIn(saveAll);
+		final boolean allMatch = fl.stream().allMatch(e ->e.getAge().equals(33333333));
+		assertThat(allMatch);
+
+
+		this.nnnnnnnnn.deleteAll();
+
+	}
+
+	@Test
+	void saveAll3() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.saveAll3()");
+
+		this.nnnnnnnnn.deleteAll();
+
+		final int k = 100;
+		final int n = 100;
+
+		final AtomicInteger wanch = new AtomicInteger();
+
+		final ZE ze = ZES.newZE(8);
+		for (int x = 1; x <= k; x++) {
+
+			ze.executeInQueue(() -> {
+				// TODO Auto-generated method stub
+
+				final ArrayList<NumberEntity> sl = Lists.newArrayList();
+				for (int i = 1; i <= n; i++) {
+					final NumberEntity entity = new NumberEntity();
+					entity.setAge(33333333);
+					sl.add(entity);
+				}
+				SbZrepositoryTestApplicationTests.this.nnnnnnnnn.saveAll(sl);
+
+				wanch.incrementAndGet();
+
+			});
+		}
+
+		while(wanch.get() < k) {
+
+		}
+		this.nnnnnnnnn.deleteAll();
+
+		System.out.println("OK");
+	}
+
 }
