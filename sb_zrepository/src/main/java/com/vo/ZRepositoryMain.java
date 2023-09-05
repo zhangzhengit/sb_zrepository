@@ -315,6 +315,22 @@ public class ZRepositoryMain {
 	}
 
 
+	// FIXME 2023年9月5日 下午9:46:27 zhanghen: 改为private，并且在第一步scanZR子接口时就校验
+	public static void checkTableExist(final Set<Class<?>> zrClassSet) {
+		for (final Class<?> class1 : zrClassSet) {
+			final String[] typeArray = UserRepositoryTest1.findZRSubclassFanxing(class1);
+			final String type = typeArray[0];
+			try {
+				final Class<?> typeClass = Class.forName(type);
+				final ZEntity zEntity = typeClass.getAnnotation(ZEntity.class);
+
+				checkZEntity_TableNameExist(zEntity.tableName());
+			} catch (final ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	/**
 	 *
 	 * @param zrClassSet
@@ -365,6 +381,39 @@ public class ZRepositoryMain {
 		}
 
 		return sqlResultlist;
+	}
+
+	/**
+	 * 校验 @ZEntity 指定的tableName是否存在
+	 *
+	 * @param tableName
+	 *
+	 */
+	private static void checkZEntity_TableNameExist(final String tableName) {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "ZRepositoryMain.checkZEntity_TableNameExist()");
+
+		final ZConnection connection = ZCPool.getInstance().getZConnection(Mode.READ);
+		ResultSet rs = null;
+		try {
+			final DatabaseMetaData metaData = connection.getConnection().getMetaData();
+			rs = metaData.getTables(null, null, tableName, null);
+			if (!rs.next()) {
+				throw new IllegalArgumentException(
+						ZEntity.class.getSimpleName() + " 指定的tableName不存在，tableName = " + tableName);
+			}
+		} catch (final SQLException e) {
+			e.printStackTrace();
+		} finally {
+			ZCPool.getInstance().returnZConnection(connection);
+			if (rs != null) {
+				try {
+					rs.close();
+				} catch (final SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 	/**
@@ -1095,8 +1144,9 @@ public class ZRepositoryMain {
 	private static void connnection(final Class<?> typeClass, final String name, final ZConnection zConnection) {
 		try {
 
-			final DatabaseMetaData metaDataWRITE = zConnection.getConnection().getMetaData();
-			c(typeClass, name, metaDataWRITE);
+			final DatabaseMetaData metaData = zConnection.getConnection().getMetaData();
+
+			c(typeClass, name, metaData);
 		} catch (final SQLException e) {
 			e.printStackTrace();
 		} finally {

@@ -86,6 +86,9 @@ public class ZRepositoryStarter implements InstantiationAwareBeanPostProcessor {
 
 		LOG.info("ZRepositoryStarter[{}]的子接口个数={}", ZRepository.class.getCanonicalName(), zrSubinterfaceSet.size());
 
+		// 1.1 验证ZRepository子接口指定的泛型类的@ZEntity指定的tableName是否存在
+		ZRepositoryMain.checkTableExist(zrSubinterfaceSet);
+
 		// 2 给ZRepository的子接口的每个方法生成 SQL
 		final List<SqlResult> sqlForZRSubclassList = ZRepositoryMain.generateSqlForZRSubclass(zrSubinterfaceSet);
 		for (final SqlResult sqlResult : sqlForZRSubclassList) {
