@@ -1,7 +1,5 @@
 package com.vo;
 
-import static org.assertj.core.api.Assertions.assertThatNullPointerException;
-
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -30,7 +28,6 @@ class SbZrepositoryTestApplicationTests {
 
 	@Autowired
 	NumberZRepository nnnnnnnnn;
-
 
 	@Test
 	void findByAgeNot() {

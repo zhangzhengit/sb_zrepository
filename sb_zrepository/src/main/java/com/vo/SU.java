@@ -317,11 +317,9 @@ public class SU {
 			// save
 			final String sql2 = gSaveSql(cls, t, sql);
 			final String s = sql2;
-			connection.setAutoCommit(false);
-			 statement = connection.createStatement();
+			statement = connection.createStatement();
 
-			 final boolean execute = statement.execute(s,Statement.RETURN_GENERATED_KEYS);
-
+			final boolean execute = statement.execute(s, Statement.RETURN_GENERATED_KEYS);
 
 //			final int executeUpdate = statement.executeUpdate(s, Statement.RETURN_GENERATED_KEYS);
 			if (ZDP.getShowSql()) {
@@ -336,12 +334,6 @@ public class SU {
 		} catch (final Exception e) {
 			e.printStackTrace();
 		} finally {
-			System.out.println("save-} finally {");
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
 			instance.returnZConnection(zc);
 			try {
 				if (rs != null) {

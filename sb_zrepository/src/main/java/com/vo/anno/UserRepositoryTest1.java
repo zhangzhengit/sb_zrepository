@@ -3,7 +3,7 @@ package com.vo.anno;
 import java.lang.reflect.Type;
 import java.util.Set;
 
-import com.vo.ZRMain;
+import com.vo.ZRepositoryMain;
 import com.vo.ZRepository;
 
 /**
@@ -21,7 +21,7 @@ public class UserRepositoryTest1 {
 
 		// FIXME 2023年6月17日 下午6:48:51 zhanghen: com改为配置
 //		final Set<Class<?>> c = ClassUtil.scanPackage("com");
-		final Set<Class<?>> c = ZRMain.scanPackage_COM();
+		final Set<Class<?>> c = ZRepositoryMain.scanPackage_COM();
 		for (final Class<?> class1 : c) {
 			if(!ccc.getCanonicalName() .equals(class1.getCanonicalName())) {
 				continue;

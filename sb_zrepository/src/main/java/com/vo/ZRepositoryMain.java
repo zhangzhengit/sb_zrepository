@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -54,7 +53,9 @@ import cn.hutool.core.util.StrUtil;
  * @date 2023年6月15日
  *
  */
-public class ZRMain {
+public class ZRepositoryMain {
+
+	public static final String TABLE_NAME = "TABLE_NAME";
 
 	private static final ZLog2 LOG = ZLog2.getInstance();
 
@@ -238,18 +239,18 @@ public class ZRMain {
 
 		final Map<Class, ZClass> map = Maps.newConcurrentMap();
 
-		final Set<ZClass> zrsubIZClass = Sets.newHashSet();
+//		final Set<ZClass> zrsubIZClass = Sets.newHashSet();
 		for (final Class<?> cls : zrSubclassSet) {
 			LOG.info("开始给[{}]的子接口[{}]生成实现类", ZRepository.class.getCanonicalName(), cls.getCanonicalName());
 			final String canonicalName = cls.getCanonicalName();
 //			System.out.println("canonicalName = \n\n" + canonicalName);
 
-			final ZClass generateZRepositorySubclass = generateMyZRepositorySubclass(canonicalName, cls);
+			final ZClass generateZRepositorySubclass = generateMyZRepositorySubclass(cls);
 			LOG.info("给[{}]的子接口[{}]生成实现类完成,className={},class=\n\n{}", ZRepository.class.getCanonicalName(),
 					cls.getCanonicalName(), generateZRepositorySubclass.getName(),
 					generateZRepositorySubclass.toString());
 
-			zrsubIZClass.add(generateZRepositorySubclass);
+//			zrsubIZClass.add(generateZRepositorySubclass);
 			map.put(cls, generateZRepositorySubclass);
 //			final Object newInstance = generateZRepositorySubclass.newInstance();
 //			System.out.println("generateZRepositorySubclass-newInstance = \n\n" + newInstance);
@@ -258,54 +259,54 @@ public class ZRMain {
 		return map;
 	}
 
-	public static Set<ZClass> generateClassForZRSubinterface(final Set<Class<?>> zrSubclassSet) {
-
+	public static Map<Class, ZClass> generateClassForZRSubinterface(final Set<Class<?>> zrSubclassSet) {
 
 		LOG.info("开始给[{}]的子接口生成实现类", ZRepository.class.getCanonicalName());
 
-		final Set<ZClass> zrsubIZClass = Sets.newHashSet();
+		final Map<Class, ZClass> map = Maps.newHashMap();
+
 		for (final Class<?> cls : zrSubclassSet) {
 			LOG.info("开始给[{}]的子接口[{}]生成实现类", ZRepository.class.getCanonicalName(), cls.getCanonicalName());
-			final String canonicalName = cls.getCanonicalName();
-//			System.out.println("canonicalName = \n\n" + canonicalName);
 
-			final ZClass generateZRepositorySubclass = generateMyZRepositorySubclass(canonicalName, cls);
+			final ZClass generateZRepositorySubclass = generateMyZRepositorySubclass(cls);
 			LOG.info("给[{}]的子接口[{}]生成实现类完成,className={},class=\n\n{}", ZRepository.class.getCanonicalName(),
 					cls.getCanonicalName(), generateZRepositorySubclass.getName(),
 					generateZRepositorySubclass.toString());
 
-			zrsubIZClass.add(generateZRepositorySubclass);
-//			final Object newInstance = generateZRepositorySubclass.newInstance();
-//			System.out.println("generateZRepositorySubclass-newInstance = \n\n" + newInstance);
+			map.put(cls, generateZRepositorySubclass);
+
 		}
 
-		return zrsubIZClass;
-
+		return map;
 	}
 
-	public static Set<Class<?>> scanZRSubclass() {
+	/**
+	 * 扫描接口 ZRepository 的子接口(自定义的继承了ZRepository的接口)
+	 *
+	 * @param packageName 扫描的包名，如： com.vo
+	 *
+	 * @return
+	 *
+	 */
+	public static Set<Class<?>> scanZRepositorySubinterface(final String packageName) {
 
-		checkZEntityField();
+		checkZEntityField(packageName);
 
 		final Set<Class<?>> zrSubclassSet = Sets.newHashSet();
-		final Set<Class<?>> clsSet = scanPackage_COM();
-		for (final Class<?> class1 : clsSet) {
+		final Set<Class<?>> clsSet = ClassMap.scanPackage(packageName);
+		for (final Class<?> cls : clsSet) {
 
-			final Class<?>[] ia = class1.getInterfaces();
-			for (final Class i : ia) {
+			final Class<?>[] ia = cls.getInterfaces();
+			for (final Class<?> i : ia) {
 				final boolean isZRSubclass = i.getCanonicalName().equals(ZRepository.class.getCanonicalName());
 				if (isZRSubclass) {
-
-					zrSubclassSet.add(class1);
+					zrSubclassSet.add(cls);
 				}
 			}
-
 		}
 
 		return zrSubclassSet;
 	}
-
-
 
 	public static Set<Class<?>> scanPackage_COM() {
 		// FIXME 2023年6月17日 下午6:46:40 zhanghen: com 改为属性配置
@@ -318,21 +319,19 @@ public class ZRMain {
 	 *
 	 * @param zrClassSet
 	 *
-	 * @author zhangzhen
-	 * @date 2023年6月16日
+	 * @return
 	 */
-	public static void generateSqlForZRSubclass(final Set<Class<?>> zrClassSet) {
+	public static List<SqlResult> generateSqlForZRSubclass(final Set<Class<?>> zrClassSet) {
 
 		LOG.info("ZRepositoryStarter开始生成[{}]的子接口的SQL模板", ZRepository.class.getCanonicalName());
+
+		final List<SqlResult> sqlResultlist = Lists.newArrayList();
 
 		for (final Class<?> zrSubClass : zrClassSet) {
 			LOG.info("ZRepositoryStarter开始生成[{}]的SQL模板", zrSubClass.getCanonicalName());
 			final String[] typeArray = UserRepositoryTest1.findZRSubclassFanxing(zrSubClass);
 
 			final Method[] ms = zrSubClass.getMethods();
-
-			final Method[] dms = zrSubClass.getDeclaredMethods();
-			final ArrayList<Method> dmsList = Lists.newArrayList(dms);
 
 			for (final Method m : ms) {
 				LOG.info("ZRepositoryStarter开始生成[{}]的方法[{}]的SQL模板", zrSubClass.getCanonicalName(), m.getName());
@@ -346,26 +345,26 @@ public class ZRMain {
 
 					checkZEntityZID(typeClass);
 
-					// 2
 					final String zrSubClassName = zrSubClass.getCanonicalName();
 					final String methodName = m.getName();
 					final String sqlTemplate = check.getValue();
 
 					final String tableName = zEntity.tableName();
-					final String sql = sqlTemplate.replace("TABLE_NAME", tableName);
+					final String sqlTemplateTemp = sqlTemplate.replace(TABLE_NAME, tableName);
 
-					final boolean isZidingyi = dmsList.contains(m);
+					final String sqlFinal = checkMethodName(typeClass, methodName, sqlTemplateTemp);
 
-					final String sqlA = checkFindByXX(typeClass, methodName, sql);
+					final SqlResult result = new SqlResult(zrSubClassName, methodName, sqlFinal);
 
-					ZRSqlMap.put(zrSubClassName, methodName, sqlA);
-//					ZRSqlMap.put(zrSubClassName, methodName, sql);
+					sqlResultlist.add(result);
 
 				} catch (final ClassNotFoundException e) {
 					e.printStackTrace();
 				}
 			}
 		}
+
+		return sqlResultlist;
 	}
 
 	/**
@@ -374,11 +373,11 @@ public class ZRMain {
 	 * @param typeClass  @ZEntity标记的类
 	 * @param methodName ZRepository 子类中的自定义的findByXX的方法名称,如findByUserId
 	 * @param sql        sql模板，如：select * from user where @ = ?
-	 * @return 返回可用于java.sql.PreparedStatement 的SQL语句，
-	 * 			如 : select * from user where id = ?
+	 * @return 返回可用于java.sql.PreparedStatement 的SQL语句， 如 : select * from user where
+	 *         id = ?
 	 *
 	 */
-	private static String checkFindByXX(final Class<?> typeClass,final String methodName, final String sql) {
+	private static String checkMethodName(final Class<?> typeClass,final String methodName, final String sql) {
 		// methodName 从每个大写字母分开分成一个数组，如findByUserId 分成[find, By, User, Id]
 
 		final List<String> fnLIst = getDeclaredFieldName(typeClass);
@@ -405,7 +404,6 @@ public class ZRMain {
 			System.out.println("mn2 = " + mn2);
 		}
 
-		final boolean removeAll = alList.removeAll(skList);
 		System.out.println("alList-removeAll-sqlKeyword = \n");
 		System.out.println(alList);
 
@@ -487,33 +485,29 @@ public class ZRMain {
 	/**
 	 * 用指定的 className 生成一个 ZRepository 的实现类
 	 *
-	 * @param className
-	 * @param myZRClass TODO
 	 * @return
 	 *
 	 */
-	private static ZClass generateMyZRepositorySubclass(final String className, final Class myZRClass) {
+	private static ZClass generateMyZRepositorySubclass(final Class<?> myZRClass) {
 
-		final String canonicalName = myZRClass.getCanonicalName();
-//		final String canonicalName = ZRepository.class.getCanonicalName();
-		final ZClass userR = new ZClass();
+		final ZClass zClass = new ZClass();
 
 		// FIXME 2023年8月26日 下午5:54:25 zhanghen: com.vo改为配置项
-		userR.setPackage1(new ZPackage("com"));
+		zClass.setPackage1(new ZPackage("com"));
 
 		//		userR.setImplementsSet(Sets.newHashSet(canonicalName + " <T, ID> "));
 //		userR.setName(canonicalName + "_ZClass" + "<T,ID>");
 
-		userR.setImportSet(Sets.newHashSet(myZRClass.getName()));
-		userR.setImplementsSet(Sets.newHashSet(myZRClass.getSimpleName()));
-		userR.setName(myZRClass.getSimpleName() + _Z_CLASS);
+		zClass.setImportSet(Sets.newHashSet(myZRClass.getName()));
+		zClass.setImplementsSet(Sets.newHashSet(myZRClass.getSimpleName()));
+		zClass.setName(myZRClass.getSimpleName() + _Z_CLASS);
 
 
 		final String[] typeArray = UserRepositoryTest1.findZRSubclassFanxing(myZRClass);
 
 		final ZField zField = new ZField("Class<" + typeArray[0] + ">", "classType",typeArray[0] + ".class");
 
-		userR.setFieldSet(Sets.newHashSet(zField));
+		zClass.setFieldSet(Sets.newHashSet(zField));
 
 		final Set<ZMethod> zmSet = new HashSet<>();
 
@@ -521,8 +515,8 @@ public class ZRMain {
 		zmSet.addAll(zmSet1);
 
 
-		userR.setMethodSet(zmSet);
-		return userR;
+		zClass.setMethodSet(zmSet);
+		return zClass;
 	}
 
 	private static Set<ZMethod> addZMethod(final Class myZRClass) {
@@ -946,13 +940,14 @@ public class ZRMain {
 
 	/**
 	 * 校验 @ZEntity 中的字段，如：不允许出现SQL关键字等等
+	 * @param packageName TODO
 	 *
 	 * @return 返回 @ZEntity 的类
 	 *
 	 */
-	private static Set<Class<?>> checkZEntityField() {
+	private static Set<Class<?>> checkZEntityField(final String packageName) {
 		final Set<Class<?>> zeSet = Sets.newHashSet();
-		final Set<Class<?>> clsSet = ClassUtil.scanPackage("com");
+		final Set<Class<?>> clsSet = ClassMap.scanPackage(packageName);
 		for (final Class<?> c : clsSet) {
 			final boolean isZE = c.isAnnotationPresent(ZEntity.class);
 			if (!isZE) {

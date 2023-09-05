@@ -1,21 +1,12 @@
 package com.vo;
 
-import java.awt.Menu;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import org.checkerframework.checker.units.qual.s;
-import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
-import org.springframework.data.redis.connection.ReactiveKeyCommands.RenameCommand;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.mysql.cj.protocol.a.TextResultsetReader;
 
 /**
  * 根据方法名拼出sql

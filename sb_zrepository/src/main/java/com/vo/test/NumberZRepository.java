@@ -12,7 +12,9 @@ import com.vo.ZRepository;
  * @date 2023年8月20日
  *
  */
-public interface NumberZRepository extends ZRepository<NumberEntity, Integer> {
+public interface NumberZRepository
+extends ZRepository<NumberEntity, Integer>
+{
 
 	// FIXME 2023年8月27日 下午1:46:07 zhanghen: TODO
 	// ，类似findByAgeOrderByIdDescLimit这种方法，在启动时提前提示
