@@ -29,6 +29,8 @@ public class MethodRegex {
 	public static final String GROUP_DeleteById = "deleteById";
 	public static final String GROUP_SAVEALL = "saveAll";
 	public static final String GROUP_SAVE = "save";
+
+	public static final String GROUP_UPDATE = "update";
 	public static final String GROUP_FINDALL = "findAll";
 
 	public static final String GROUP_findByXXAndXX = "findBy(.*)And(.*)";
@@ -40,6 +42,7 @@ public class MethodRegex {
 	public static final String GROUP_findByXXXStartingWith= "findBy(.*)StartingWith";
 
 	public static final String GROUP_findByXXGreaterThanEquals = "findBy(.*)GreaterThanEquals";
+
 	public static final String GROUP_findByXXGreaterThan = "findBy(.*)GreaterThan";
 	public static final String GROUP_findByXXLessThanEquals = "findBy(.*)LessThanEquals";
 	public static final String GROUP_findByXXLessThan = "findBy(.*)LessThan";
@@ -102,6 +105,7 @@ public class MethodRegex {
 	public final static HashMap<String, String> REGEX_MAP_DELETEBYID = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_SAVEALL = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_SAVE = new LinkedHashMap<>();
+	public final static HashMap<String, String> REGEX_MAP_UPDATE = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_FINDBYXXAndXX = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_FINDBYXX = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_findByXXXIsNull = new LinkedHashMap<>();
@@ -140,6 +144,8 @@ public class MethodRegex {
 		REGEX_MAP_SAVEALL.put(saveAll, "insert into TABLE_NAME (F) values(A)");
 		// save
 		REGEX_MAP_SAVE.put(save, "insert into TABLE_NAME (F) values(A);");
+		// update
+		REGEX_MAP_UPDATE.put(GROUP_UPDATE, "update TABLE_NAME set COLUME where id = ?; ");
 
 		// findAll
 		REGEX_MAP_FINDALL.put(findAll, "select * from TABLE_NAME");
@@ -200,6 +206,7 @@ public class MethodRegex {
 		R_M.put(GROUP_FINDALL, REGEX_MAP_FINDALL);
 		R_M.put(GROUP_SAVEALL, REGEX_MAP_SAVEALL);
 		R_M.put(GROUP_SAVE, REGEX_MAP_SAVE);
+		R_M.put(GROUP_UPDATE, REGEX_MAP_UPDATE);
 		R_M.put(GROUP_DeleteById, REGEX_MAP_DELETEBYID);
 		R_M.put(GROUP_EXISTBYId, REGEX_MAP_EXISTBYID);
 		R_M.put(GROUP_CountingByXXX, REGEX_MAP_CountingByXXX);

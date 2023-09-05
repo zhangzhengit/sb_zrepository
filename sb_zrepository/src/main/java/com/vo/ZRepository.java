@@ -19,6 +19,8 @@ public interface ZRepository<T, ID> {
 
 	T findById(ID id);
 
+	T update(T t);
+
 	/**
 	 * save方法会先判断对象是否存在，如果存在，则更新参数t中不为null的值到数据库; 如果不存在，则直接save参数t对象
 	 *

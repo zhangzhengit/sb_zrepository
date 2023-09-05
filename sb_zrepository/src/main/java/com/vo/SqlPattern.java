@@ -63,8 +63,8 @@ public class SqlPattern {
 	public static final HashSet<String> SQL_KEYWORD = Sets.newHashSet();
 
 	public static HashSet<String> inOrLikeAnd = Sets.newHashSet("And", "In", "Or", "Like");
-	public static HashSet<String> keyword = Sets.newHashSet("find", "delete", "save", "exist", "page", "By", "In", "Or",
-			"Like");
+	public static HashSet<String> keyword = Sets.newHashSet("find", "delete", "update", "save", "exist", "page", "By",
+			"In", "Or", "Like");
 	public static final HashSet<String> methodPrefix = Sets.newHashSet("find", "delete", "save", "exist", "page");
 
 	public static final HashSet<Character> shuzi = Sets.newHashSet('1', '2', '3', '4', '5', '6', '7', '8', '9', '0');

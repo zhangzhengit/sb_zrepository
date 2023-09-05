@@ -650,6 +650,9 @@ public class ZRepositoryMain {
 		case "saveAll":
 			return "return " + SU.class.getCanonicalName() + ".saveAll(" + modeString + ", classType,sql,tList);";
 
+		case "update":
+			return "return " + SU.class.getCanonicalName() + ".update(" + modeString + ", classType,t,sql);";
+
 		case "save":
 
 			final String string =

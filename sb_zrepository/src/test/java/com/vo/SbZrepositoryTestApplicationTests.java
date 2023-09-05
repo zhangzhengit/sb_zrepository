@@ -1,5 +1,6 @@
 package com.vo;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import com.google.common.collect.Lists;
 import com.vo.test.NumberEntity;
 import com.vo.test.NumberZRepository;
 import com.votool.ze.ZE;
@@ -28,6 +30,83 @@ class SbZrepositoryTestApplicationTests {
 
 	@Autowired
 	NumberZRepository nnnnnnnnn;
+
+	@Test
+	void update2() {
+
+		final int n = 1420;
+
+		final ArrayList<NumberEntity> sl = Lists.newArrayList();
+		for (int i = 1; i <= n; i++) {
+			final NumberEntity entity = new NumberEntity();
+			entity.setAge(12345);
+			final NumberEntity save = this.nnnnnnnnn.save(entity);
+			sl.add(save);
+		}
+
+		assertThat(sl.size() == n);
+
+		final List<NumberEntity> findByIdIn = this.nnnnnnnnn.findByIdIn(sl.stream().map(e -> e.getId()).collect(Collectors.toList()));
+		assertThat(findByIdIn.size() == n);
+
+		for (final NumberEntity e1 : findByIdIn) {
+			final boolean anyMatch = sl.stream().anyMatch(e -> e.getId().equals(e1.getId()));
+			assertThat(anyMatch);
+		}
+
+
+		for (final NumberEntity e1 : sl) {
+			e1.setAge(9999999);
+			final NumberEntity update = this.nnnnnnnnn.update(e1);
+			assertThat(update.getAge().equals(9999999));
+
+			final NumberEntity findById = this.nnnnnnnnn.findById(e1.getId());
+			assertThat(findById.getAge().equals(9999999));
+
+		}
+
+
+		final List<NumberEntity> findByAge = this.nnnnnnnnn.findByAge(9999999);
+
+		final Long countingByAge = this.nnnnnnnnn.countingByAge(9999999);
+		assertThat(findByAge.size() >= sl.size());
+		assertThat(findByAge.size() == countingByAge.intValue());
+
+		for (final NumberEntity e1 : sl) {
+			this.nnnnnnnnn.deleteById(e1.getId());
+		}
+
+		final Long countingByAgeDDDD = this.nnnnnnnnn.countingByAge(9999999);
+		assertThat(countingByAgeDDDD.intValue() >= 0);
+
+		for (final NumberEntity numberEntity : findByAge) {
+			this.nnnnnnnnn.deleteById(numberEntity.getId());
+		}
+
+
+		final Long countingByAgeDDDDxxx = this.nnnnnnnnn.countingByAge(9999999);
+		assertThat(countingByAgeDDDDxxx.intValue() == 0);
+
+	}
+
+	@Test
+	void update1() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.update1()");
+
+
+		final NumberEntity entity = new NumberEntity();
+		entity.setAge(12345);
+		final NumberEntity save = this.nnnnnnnnn.save(entity);
+
+		assertThat(save.getAge().equals(12345));
+
+		save.setAge(55555);
+		final NumberEntity update = this.nnnnnnnnn.update(save);
+
+		assertThat(update.getAge().equals(55555));
+
+	}
 
 	@Test
 	void findByAgeNot() {

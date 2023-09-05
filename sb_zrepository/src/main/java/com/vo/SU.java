@@ -43,6 +43,90 @@ public class SU {
 
 	private static final ZCPool instance = ZCPool.getInstance();
 
+	public static <T> T update(final Mode mode, final Class<T> cls, final T t, final String sql) {
+		final Field[] fs = t.getClass().getDeclaredFields();
+//		final ArrayList<Field> fList = Lists.newArrayList(fs);
+		final StringBuilder column =new StringBuilder();
+		for (int i = 0; i < fs.length; i++) {
+			final Field field = fs[i];
+			field.setAccessible(true);
+
+			try {
+				final Object fV = field.get(t);
+
+				if (fV != null) {
+					column.append(field.getName()).append('=');
+					if (fV instanceof String) {
+						column.append("'").append(fV).append("'");
+					} else if (fV instanceof Date) {
+						// FIXME 2023年8月1日 下午8:50:26 zhanghen: TODO 日期时间的字段，新增注解：表示插入的格式
+						final String vD = DateUtil.format((Date) fV, DatePattern.NORM_DATETIME_FORMAT);
+						column.append("'").append(vD).append("'");
+					} else {
+						column.append(fV);
+					}
+					column.append(',');
+				}
+
+			} catch (IllegalArgumentException | IllegalAccessException e) {
+				e.printStackTrace();
+			}
+
+		}
+
+		if (column.length() <= 0) {
+			// XXX T 所有字段值都是null， 是不执行update，还是抛异常？
+			return t;
+		}
+
+		final Optional<Field> zidO = Lists.newArrayList(fs).stream().filter(f -> f.isAnnotationPresent(ZID.class)).findAny();
+		if (!zidO.isPresent()) {
+			throw new IllegalArgumentException(
+					"无 " + ZID.class.getSimpleName() + " 标记的属性，t = " + t.getClass().getCanonicalName());
+		}
+
+		final Field idField = zidO.get();
+
+		idField.setAccessible(true);
+		Object idV = null;
+		try {
+			idV = idField.get(t);
+		} catch (IllegalArgumentException | IllegalAccessException e1) {
+			e1.printStackTrace();
+		}
+
+		final String sqlFinal = sql.replace("COLUME", column.replace(column.length()-1, column.length(), ""));
+
+		final ZConnection zc = ZCPool.getInstance().getZConnection(mode);
+
+		PreparedStatement ps  = null;
+		try {
+			ps = zc.getConnection().prepareStatement(sqlFinal);
+			ps.setObject(1, idV);
+
+			if (ZDP.getShowSql()) {
+				LOG.info("[{}],[{}]", sqlFinal, idV);
+			}
+
+			final int executeUpdate = ps.executeUpdate();
+			System.out.println("executeUpdate = " + executeUpdate);
+
+		} catch (final Exception e) {
+			e.printStackTrace();
+		} finally {
+			ZCPool.getInstance().returnZConnection(zc);
+			if (ps != null) {
+				try {
+					ps.close();
+				} catch (final SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		return t;
+	}
+
 	public static <T> boolean deleteAll(final Mode mode, final Class<T> cls, final String sql) {
 
 		final ZConnection zc = getZC(mode);
