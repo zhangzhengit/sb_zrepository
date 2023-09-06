@@ -62,7 +62,7 @@ class SbZrepositoryTestApplicationTests {
 				ssss.add(save);
 			}
 		});
-		thread1.setName("NNNNNNN");
+		thread1.setName("AAAAAAAAAAA");
 
 
 		final Thread thread2 = new Thread(() -> {
@@ -73,7 +73,7 @@ class SbZrepositoryTestApplicationTests {
 				ssss.add(save2);
 			}
 		});
-		thread2.setName("MMMMMMM");
+		thread2.setName("BBBBBBBBBBBBB");
 
 		thread1.start();
 		thread2.start();
@@ -133,24 +133,40 @@ class SbZrepositoryTestApplicationTests {
 
 		System.out.println();
 
-		final NumberEntity entity = new  NumberEntity();
+		final int n = 200;
+		final AtomicInteger w = new AtomicInteger();
+
+		for(int i = 1;i<=n;i++) {
+
+			this.ze.executeInQueue(() -> {
+
+				final NumberEntity entity = new NumberEntity();
 //		entity.setId(47797);
-		entity.setAge(33333333);
-		entity.setStatus(1);
+				entity.setAge(33333333);
+				entity.setStatus(1);
 //		entity.setName("zhangsan");
 
-		final Page<NumberEntity> page = this.nnnnnnnnn.page(entity, 6, 3333);
+				final Page<NumberEntity> page = this.nnnnnnnnn.page(entity, 1, 3333);
 
-		System.out.println();
+				System.out.println();
 
-		System.out.println("当前页 = " + page.getPage());
-		System.out.println("页条数 = " + page.getSize());
-		System.out.println("总页数 = " + page.getTotalPage());
-		System.out.println("总条数 = " + page.getTotalCount());
-		System.out.println("内容数 = " + page.getList().size());
-		System.out.println("有下页 = " + page.hasNextPage());
-		System.out.println("有上页 = " + page.hasPreviousPage());
-		System.out.println("有内容 = " + page.hasContent());
+				System.out.println("当前页 = " + page.getPage());
+				System.out.println("页条数 = " + page.getSize());
+				System.out.println("总页数 = " + page.getTotalPage());
+				System.out.println("总条数 = " + page.getTotalCount());
+				System.out.println("内容数 = " + page.getList().size());
+				System.out.println("有下页 = " + page.hasNextPage());
+				System.out.println("有上页 = " + page.hasPreviousPage());
+				 System.out.println("有内容 = " + page.hasContent());
+
+				 w.incrementAndGet();
+			});
+		}
+
+		while (w.get() < n) {
+
+		}
+		System.out.println("OK");
 
 	}
 
