@@ -132,13 +132,7 @@ public class SU {
 				e1.printStackTrace();
 			}
 			ZCPool.getInstance().returnZConnection(zc);
-			if (ps != null) {
-				try {
-					ps.close();
-				} catch (final SQLException e) {
-					e.printStackTrace();
-				}
-			}
+			close(ps);
 		}
 
 		return t;
@@ -182,11 +176,7 @@ public class SU {
 				e1.printStackTrace();
 			}
 			instance.returnZConnection(zc);
-			try {
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
+			close(ps);
 		}
 
 		return false;
@@ -242,13 +232,7 @@ public class SU {
 				e1.printStackTrace();
 			}
 			instance.returnZConnection(zc);
-			try {
-				if (ps != null) {
-					ps.close();
-				}
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
+			close(ps);
 		}
 
 		return false;
@@ -289,12 +273,8 @@ public class SU {
 			} catch (final SQLException e1) {
 				e1.printStackTrace();
 			}
+			close(ps);
 			instance.returnZConnection(zc);
-			try {
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
 		}
 
 		return false;
@@ -304,6 +284,12 @@ public class SU {
 
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
+
+		try {
+			connection.setAutoCommit(false);
+		} catch (final SQLException e1) {
+			e1.printStackTrace();
+		}
 
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -324,14 +310,19 @@ public class SU {
 
 		} catch (SQLException | SecurityException e) {
 			e.printStackTrace();
-		} finally {
-			instance.returnZConnection(zc);
 			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
 			}
+		} finally {
+			try {
+				connection.commit();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
+			instance.returnZConnection(zc);
+			close(rs, ps);
 		}
 
 		return false;
@@ -444,16 +435,10 @@ public class SU {
 			try {
 				connection.commit();
 				instance.returnZConnection(zc);
-				if (ps != null) {
-					ps.clearBatch();
-					ps.close();
-				}
-				if (rs != null) {
-					rs.close();
-				}
-			} catch (final SQLException e) {
-				e.printStackTrace();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
 			}
+			close(rs, ps);
 		}
 
 		return null;
@@ -581,16 +566,7 @@ public class SU {
 				e1.printStackTrace();
 			}
 			instance.returnZConnection(zc);
-			try {
-				if (rs != null) {
-					rs.close();
-				}
-				if (statement != null) {
-					statement.close();
-				}
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
+			close(rs, statement);
 		}
 
 		return null;
@@ -604,6 +580,7 @@ public class SU {
 			return zcT;
 		}
 
+		// FIXME 2023年9月6日 下午2:33:36 zhanghen: 在此setAutoCommit(false)然后在归还方法里commit?
 		final ZConnection zc = instance.getZConnection(mode);
 		return zc;
 	}
@@ -647,6 +624,12 @@ public class SU {
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
 
+		try {
+			connection.setAutoCommit(false);
+		} catch (final SQLException e1) {
+			e1.printStackTrace();
+		}
+
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
@@ -682,14 +665,20 @@ public class SU {
 		} catch (SQLException | InstantiationException | IllegalAccessException | NoSuchFieldException
 				| SecurityException e) {
 			e.printStackTrace();
-		} finally {
-			instance.returnZConnection(zc);
 			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
 			}
+		} finally {
+			try {
+				connection.commit();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
+
+			instance.returnZConnection(zc);
+			close(rs, ps);
 		}
 
 		return null;
@@ -749,12 +738,7 @@ public class SU {
 				e1.printStackTrace();
 			}
 			instance.returnZConnection(zc);
-			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
+			close(rs, ps);
 		}
 
 		return null;
@@ -809,16 +793,7 @@ public class SU {
 			}
 
 			instance.returnZConnection(zc);
-			try {
-				if (rs != null) {
-					rs.close();
-				}
-				if (ps != null) {
-					ps.close();
-				}
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
+			close(rs, ps);
 		}
 
 		return null;
@@ -842,7 +817,11 @@ public class SU {
 
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
-
+		try {
+			connection.setAutoCommit(false);
+		} catch (final SQLException e1) {
+			e1.printStackTrace();
+		}
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
@@ -875,14 +854,19 @@ public class SU {
 		} catch (SQLException | InstantiationException | IllegalAccessException | NoSuchFieldException
 				| SecurityException e) {
 			e.printStackTrace();
-		} finally {
-			instance.returnZConnection(zc);
 			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
 			}
+		} finally {
+			try {
+				connection.commit();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
+			instance.returnZConnection(zc);
+			close(rs, ps);
 		}
 
 		return null;
@@ -896,6 +880,7 @@ public class SU {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
+			connection.setAutoCommit(false);
 			// "select * from user where id = ?"
 			final String s = sql;
 			ps = connection.prepareStatement(s);
@@ -919,15 +904,20 @@ public class SU {
 			return r;
 		} catch (SQLException | InstantiationException | IllegalAccessException | NoSuchFieldException
 				| SecurityException e) {
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
 			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
+				connection.commit();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
 			}
+			close(rs, ps);
 		}
 
 		return null;
@@ -937,6 +927,12 @@ public class SU {
 
 		final ZConnection zc = getZC(mode);
 		final Connection connection = zc.getConnection();
+
+		try {
+			connection.setAutoCommit(false);
+		} catch (final SQLException e1) {
+			e1.printStackTrace();
+		}
 
 		Statement statement = null;
 		ResultSet rs = null;
@@ -986,14 +982,19 @@ public class SU {
 		} catch (SQLException | InstantiationException | IllegalAccessException | NoSuchFieldException
 				| SecurityException e) {
 			e.printStackTrace();
-		} finally {
-			instance.returnZConnection(zc);
 			try {
-				rs.close();
-				statement.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
 			}
+		} finally {
+			try {
+				connection.commit();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
+			instance.returnZConnection(zc);
+			close(rs, statement);
 		}
 
 		return null;
@@ -1007,6 +1008,7 @@ public class SU {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
+			 connection.setAutoCommit(false);
 			// "select * from user where id = ?"
 			final String s = sql;
 			ps = connection.prepareStatement(s);
@@ -1032,14 +1034,19 @@ public class SU {
 		} catch (SQLException | InstantiationException | IllegalAccessException | NoSuchFieldException
 				| SecurityException e) {
 			e.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
 		} finally {
 			instance.returnZConnection(zc);
 			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
+				connection.commit();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
 			}
+			close(rs, ps);
 		}
 
 		return null;
@@ -1053,6 +1060,7 @@ public class SU {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
+			connection.setAutoCommit(false);
 			// "select * from user where id = ?"
 			final String s = sql;
 			ps = connection.prepareStatement(s);
@@ -1077,14 +1085,20 @@ public class SU {
 		} catch (SQLException | InstantiationException | IllegalAccessException | NoSuchFieldException
 				| SecurityException e) {
 			e.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
 		} finally {
 			instance.returnZConnection(zc);
 			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
+				connection.commit();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
 			}
+
+			close(rs, ps);
 		}
 
 		return null;
@@ -1097,6 +1111,7 @@ public class SU {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
+			connection.setAutoCommit(false);
 			// "select * from user where id = ?"
 			final String s = sql;
 			ps = connection.prepareStatement(s);
@@ -1121,14 +1136,19 @@ public class SU {
 		} catch (SQLException | InstantiationException | IllegalAccessException | NoSuchFieldException
 				| SecurityException e) {
 			e.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
 		} finally {
 			instance.returnZConnection(zc);
 			try {
-				rs.close();
-				ps.close();
+				connection.commit();
 			} catch (final SQLException e) {
 				e.printStackTrace();
 			}
+			close(rs, ps);
 		}
 
 		return null;
@@ -1141,6 +1161,7 @@ public class SU {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
+			connection.setAutoCommit(false);
 			// "select * from user where id = ?"
 			final String s = sql;
 			ps = connection.prepareStatement(s);
@@ -1167,12 +1188,7 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
-			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
+			close(rs, ps);
 		}
 
 		return null;
@@ -1211,12 +1227,7 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
-			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
+			close(rs, ps);
 		}
 
 		return null;
@@ -1263,12 +1274,7 @@ public class SU {
 				e1.printStackTrace();
 			}
 			instance.returnZConnection(zc);
-			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
+			close(rs, ps);
 		}
 
 		return null;
@@ -1303,12 +1309,7 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
-			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
+			close(rs, ps);
 		}
 
 		return null;
@@ -1351,15 +1352,22 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			instance.returnZConnection(zc);
-			try {
-				rs.close();
-				ps.close();
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
+			close(rs, ps);
 		}
 
 		return null;
 	}
 
+	private static void close(final AutoCloseable... autoCloseables) {
+		for (final AutoCloseable autoCloseable : autoCloseables) {
+			if (autoCloseable == null) {
+				continue;
+			}
+			try {
+				autoCloseable.close();
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
 }
