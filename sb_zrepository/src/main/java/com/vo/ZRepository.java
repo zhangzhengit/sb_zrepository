@@ -2,6 +2,9 @@ package com.vo;
 
 import java.util.List;
 
+import com.vo.core.Page;
+
+
 /**
  *
  * 顶级接口，自定义interface来 extends 此interface，注意自定义interface里面只可以有数据操作相关的方法.
@@ -14,6 +17,19 @@ import java.util.List;
  *
  */
 public interface ZRepository<T, ID> {
+
+	// FIXME 2023年9月6日 下午7:40:07 zhanghen: TODO 分页
+
+	/**
+	 * 分页查询，按T中非空字段等值查询，有多个非空字段则用and连接
+	 *
+	 * @param t    查询条件，根据对象里非null的字段来查询，等值查询
+	 * @param page 第几页，从1开始
+	 * @param size 一页显示几条
+	 * @return
+	 *
+	 */
+	Page<T> page(T t, Integer page, Integer size);
 
 	Long count();
 

@@ -16,10 +16,12 @@ public interface NumberZRepository
 extends ZRepository<NumberEntity, Integer>
 {
 
+	List<NumberEntity> findByAgeLessThanEquals(Integer id);
+
 	// FIXME 2023年8月27日 下午1:46:07 zhanghen: TODO
 	// ，类似findByAgeOrderByIdDescLimit这种方法，在启动时提前提示
 	// 方法参数个数、类型等问题，而不是等到运行时抛异常
-	List<NumberEntity> findByAgeOrderByIdDescLimit(Integer age, Integer offset, Integer count);
+	List<NumberEntity> findByStatusOrderByIdDescLimit(Integer status, Integer offset, Integer count);
 
 	List<NumberEntity> findByAgeIsNull(Integer age);
 	List<NumberEntity> findByAgeIn(List<Integer> ageList);

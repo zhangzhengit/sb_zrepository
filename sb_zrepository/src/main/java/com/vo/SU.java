@@ -14,16 +14,22 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.StringJoiner;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.vo.anno.ZEntity;
 import com.vo.conn.Mode;
 import com.vo.conn.ZCPool;
 import com.vo.conn.ZConnection;
 import com.vo.conn.ZDatasourceProperties;
 import com.vo.conn.ZDatasourcePropertiesLoader;
+import com.vo.core.Page;
 import com.vo.core.ZLog2;
 import com.vo.transaction.ZTransactionAspect;
 
@@ -40,10 +46,139 @@ import cn.hutool.core.date.DateUtil;
  */
 public class SU {
 
+	private static final String LIMIT = "limit";
 	private static final ZLog2 LOG = ZLog2.getInstance();
 	private static final ZDatasourceProperties ZDP = ZDatasourcePropertiesLoader.getInstance();
 
 	private static final ZCPool INSTANCE = ZCPool.getInstance();
+
+	public static <T> Page<T> page(final Mode mode, final Class<T> cls, final T t, final String sql, final Integer size, final Integer page) {
+		System.out
+				.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "SU.page()");
+
+		if (size <= 0) {
+			throw new IllegalArgumentException("size 必须大于0！size = " + size);
+		}
+		if (page <= 0) {
+			throw new IllegalArgumentException("page 必须大于0！page = " + page);
+		}
+
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
+		final Connection connection = zc.getConnection();
+//		PreparedStatement ps = null;
+//		ResultSet rs  = null;
+		try {
+			connection.setAutoCommit(false);
+
+			final Map<String, Object> fMap = getNotNullFieldMap(t);
+			final String sqlFinal = sql.replace("COLUMN", "").replace("where", "");
+			if (CollUtil.isEmpty(fMap)) {
+				return page0(mode, cls, size, page, zc, sqlFinal, true);
+			}
+
+			final Set<Entry<String, Object>> es = fMap.entrySet();
+			final StringBuilder builder = new StringBuilder();
+			for (final Entry<String, Object> entry : es) {
+				final String fieldName = entry.getKey();
+				final Object fieldValue = entry.getValue();
+
+				// FIXME 2023年9月6日 下午9:05:35 zhanghen: 测试不同类型的字段，看直接append(toString)是否报错
+				builder.append(" ").append(fieldName).append(" = ");
+				if (fieldValue instanceof String) {
+					builder.append("'").append(fieldValue).append("'");
+				} else if (fieldValue instanceof Number) {
+					builder.append(fieldValue);
+				}
+
+				builder.append(" and ");
+			}
+			final String x = builder.replace(builder.length()-5, builder.length(), "").toString();
+			final String sqlFinalX = sql.replace("COLUMN", x);
+			System.out.println("FsqlFinal = " + sqlFinalX);
+
+			return page0(mode, cls, size, page, zc, sqlFinalX, false);
+
+		} catch (final SQLException | InstantiationException | IllegalAccessException | NoSuchFieldException e1) {
+			e1.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
+		} finally {
+//			close(ps, rs);
+			ZCPool.getInstance().returnZConnectionAndCommit(zc);
+		}
+
+		return null;
+	}
+
+	private static <T> Page<T> page0(final Mode mode, final Class<T> cls, final Integer size, final Integer page,
+			final ZConnection zc, final String sqlFinal, final boolean tAllFieldNull)
+			throws SQLException, InstantiationException, IllegalAccessException, NoSuchFieldException {
+		final PreparedStatement	ps = zc.getConnection().prepareStatement(sqlFinal);
+		final int offset = (page -1) * size;
+		final int rows = size;
+		ps.setInt(1, offset);
+		ps.setInt(2, rows);
+
+		if (ZDP.getShowSql()) {
+			LOG.info("[{}],[{},{}]", sqlFinal, offset, rows);
+		}
+
+		final ResultSet	rs = ps.executeQuery();
+		final ResultSetMetaData metaData = rs.getMetaData();
+
+		final int count = metaData.getColumnCount();
+		final List<T> rL = Lists.newArrayList();
+		while (rs.next()) {
+			final T tR = newT(cls, rs, metaData, count);
+//					System.out.println("pagetR = " + tR);
+			rL.add(tR);
+		}
+
+		final String tableName = cls.getAnnotation(ZEntity.class).tableName();
+
+		final int limitI = sqlFinal.indexOf(LIMIT);
+		final String countSQLNotNUll = sqlFinal.replace("select * ", "select count(*) ");
+
+		final String countSQL = tAllFieldNull ? "select count(*) from " + tableName
+				: sqlFinal.substring(0, limitI).replace("select * ", "select count(*) ");
+		final Long countR = count(mode, cls, countSQL, zc);
+
+		final long pages = countR.longValue() % size == 0 ? countR.longValue() / size
+				: countR.longValue() / size + 1;
+		final Page<T> pageR = new Page(size, Long.valueOf(String.valueOf(page)), pages, countR, ImmutableList.copyOf(rL));
+		return pageR;
+	}
+
+	/**
+	 * 获取T对象里非空的字段，返回<字段名称,字段值>
+	 *
+	 * @param <T>
+	 * @param t
+	 * @return
+	 *
+	 */
+	private static <T> Map<String, Object> getNotNullFieldMap(final T t) {
+		final Map<String, Object> fMap = Maps.newHashMap();
+		final Field[] fs = t.getClass().getDeclaredFields();
+		for (final Field f : fs) {
+			f.setAccessible(true);
+			try {
+				final Object v = f.get(t);
+				if (v == null) {
+					continue;
+				}
+
+				fMap.put(f.getName(), v);
+			} catch (IllegalArgumentException | IllegalAccessException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return fMap;
+	}
 
 	public static <T> T update(final Mode mode, final Class<T> cls, final T t, final String sql) {
 		final Field[] fs = t.getClass().getDeclaredFields();
@@ -97,7 +232,7 @@ public class SU {
 			e1.printStackTrace();
 		}
 
-		final String sqlFinal = sql.replace("COLUME", column.replace(column.length()-1, column.length(), ""));
+		final String sqlFinal = sql.replace("COLUMN", column.replace(column.length()-1, column.length(), ""));
 
 		final ZConnection zc = ZCPool.getInstance().getZConnection(mode);
 
@@ -1022,7 +1157,7 @@ public class SU {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
-			 connection.setAutoCommit(false);
+			connection.setAutoCommit(false);
 			// "select * from user where id = ?"
 			final String s = sql;
 			ps = connection.prepareStatement(s);
@@ -1257,9 +1392,8 @@ public class SU {
 		return null;
 	}
 
-	public static <T> Long count(final Mode mode, final Class<T> cls, final String sql) {
+	public static <T> Long count(final Mode mode, final Class<T> cls, final String sql,final ZConnection zc) {
 
-		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		try {
@@ -1292,16 +1426,16 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
 			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
 		return null;
+	}
+
+	public static <T> Long count(final Mode mode, final Class<T> cls, final String sql) {
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
+		return count(mode, cls, sql,zc);
 	}
 
 	public static <T> Long countingByXX(final Mode mode, final Class<T> cls, final String sql, final Object field) {

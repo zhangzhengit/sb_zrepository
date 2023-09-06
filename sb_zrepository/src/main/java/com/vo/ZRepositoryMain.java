@@ -34,6 +34,7 @@ import com.vo.anno.ZWrite;
 import com.vo.conn.Mode;
 import com.vo.conn.ZCPool;
 import com.vo.conn.ZConnection;
+import com.vo.core.Page;
 import com.vo.core.ZClass;
 import com.vo.core.ZField;
 import com.vo.core.ZLog2;
@@ -677,6 +678,11 @@ public class ZRepositoryMain {
 //				+ "return "+SU.class.getCanonicalName()+".findById(" + modeString + ", id, this.classType, findByIDSql);";
 //
 //			return string;
+
+		case "page":
+
+//			page(final Mode mode, final Class<T> cls, final T t, final String sql, final Integer size, final Integer page) {
+			return "return " + SU.class.getCanonicalName() + ".page(" + modeString + ", classType,t,sql,size,page);";
 
 		case "existById":
 

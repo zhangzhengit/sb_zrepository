@@ -24,6 +24,22 @@ public class MethodRegex {
 	public static final String GROUP_findByXXOrderByXXLimit = "findBy(.*)OrderBy(.*)Limit";
 	public static final String GROUP_findByXXOrderByXXDescLimit = "findBy(.*)OrderBy(.*)DescLimit";
 	public static final String GROUP_count = "count";
+
+	public static final String GROUP_page = "page";
+
+	// FIXME 2023年9月6日 下午9:33:19 zhanghen: TODO  asc/desc实现出来
+	// asc
+	public static final String GROUP_pageByXX_orderByXX = "pageBy(.*)OrderBy(.*)";
+	public static final String GROUP_pageByXXAndXX_orderByXX = "pageBy(.*)And(.*)OrderBy(.*)";
+	public static final String GROUP_pageByXXAndXXAndXX_orderByXX = "pageBy(.*)And(.*)And(.*)OrderBy(.*)";
+	public static final String GROUP_pageByXXAndXXAndXXAndXX_orderByXX = "pageBy(.*)And(.*)And(.*)And(.*)OrderBy(.*)";
+
+	// desc
+	public static final String GROUP_pageByXX_orderByXXDesc = "pageBy(.*)OrderBy(.*)Desc";
+	public static final String GROUP_pageByXXAndXX_orderByXXDesc = "pageBy(.*)And(.*)OrderBy(.*)Desc";
+	public static final String GROUP_pageByXXAndXXAndXX_orderByXXDesc = "pageBy(.*)And(.*)And(.*)OrderBy(.*)Desc";
+	public static final String GROUP_pageByXXAndXXAndXXAndXX_orderByXXDesc = "pageBy(.*)And(.*)And(.*)And(.*)OrderBy(.*)Desc";
+
 	public static final String GROUP_CountingByXXX = "countingBy(.*)";
 	public static final String GROUP_EXISTBYId = "existById";
 	public static final String GROUP_DeleteById = "deleteById";
@@ -85,6 +101,7 @@ public class MethodRegex {
 	public 	static final String findByXXOrderByXXDescLimit = GROUP_findByXXOrderByXXDescLimit;
 	public 	static final String findByXXOrderByXXLimit = GROUP_findByXXOrderByXXLimit;
 	public 	static final String count = GROUP_count;
+	public 	static final String page = GROUP_page;
 	public 	static final String countingByXXX = GROUP_CountingByXXX;
 	public 	static final String existById = GROUP_EXISTBYId;
 	public 	static final String deleteById = GROUP_DeleteById;
@@ -102,6 +119,7 @@ public class MethodRegex {
 	public final static HashMap<String, String> REGEX_MAP_findByXXOrderByXXDescLimit = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_findByXXOrderByXXLimit = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_Count = new LinkedHashMap<>();
+	public final static HashMap<String, String> REGEX_MAP_PAGE = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_CountingByXXX = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_EXISTBYID = new LinkedHashMap<>();
 	public final static HashMap<String, String> REGEX_MAP_DELETEBYID = new LinkedHashMap<>();
@@ -130,8 +148,12 @@ public class MethodRegex {
 		// findByXXOrderByXXLimit
 		REGEX_MAP_findByXXOrderByXXLimit.put(findByXXOrderByXXLimit, "select * from TABLE_NAME where @ = ? order by @ asc limit ?,?");
 
+		// page
+		REGEX_MAP_PAGE.put(page, "select * from TABLE_NAME where COLUMN limit ?,?");
+
 		// count
 		REGEX_MAP_Count.put(count, "select count(*) from TABLE_NAME");
+
 		// countingByXXX
 		REGEX_MAP_CountingByXXX.put(countingByXXX, "select count(*) from TABLE_NAME  where @ = ?;");
 
@@ -149,8 +171,9 @@ public class MethodRegex {
 		REGEX_MAP_SAVEALL.put(saveAll, "insert into TABLE_NAME (F) values(A)");
 		// save
 		REGEX_MAP_SAVE.put(save, "insert into TABLE_NAME (F) values(A);");
+
 		// update
-		REGEX_MAP_UPDATE.put(GROUP_UPDATE, "update TABLE_NAME set COLUME where id = ?; ");
+		REGEX_MAP_UPDATE.put(GROUP_UPDATE, "update TABLE_NAME set COLUMN where id = ?; ");
 
 		// findAll
 		REGEX_MAP_FINDALL.put(findAll, "select * from TABLE_NAME");
@@ -216,6 +239,7 @@ public class MethodRegex {
 		R_M.put(GROUP_EXISTBYId, REGEX_MAP_EXISTBYID);
 		R_M.put(GROUP_CountingByXXX, REGEX_MAP_CountingByXXX);
 		R_M.put(GROUP_count, REGEX_MAP_Count);
+		R_M.put(GROUP_page, REGEX_MAP_PAGE);
 	}
 
 

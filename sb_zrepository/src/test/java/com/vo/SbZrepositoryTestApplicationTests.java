@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.vo.core.Page;
 import com.vo.test.NumberEntity;
 import com.vo.test.NumberZRepository;
 import com.votool.ze.AbstractZETask;
@@ -36,10 +37,99 @@ class SbZrepositoryTestApplicationTests {
 	@Autowired
 	NumberZRepository nnnnnnnnn;
 
+	final ZE ze = ZES.newZE(Runtime.getRuntime().availableProcessors() * 10);
+
+	@Test
+	void page_1() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.page_1()");
+
+		System.out.println();
+
+		final NumberEntity entity = new  NumberEntity();
+//		entity.setId(47797);
+		entity.setAge(33333333);
+		entity.setStatus(1);
+//		entity.setName("zhangsan");
+
+		final Page<NumberEntity> page = this.nnnnnnnnn.page(entity, 6, 3333);
+
+		System.out.println();
+
+		System.out.println("当前页 = " + page.getPage());
+		System.out.println("页条数 = " + page.getSize());
+		System.out.println("总页数 = " + page.getTotalPage());
+		System.out.println("总条数 = " + page.getTotalCount());
+		System.out.println("内容数 = " + page.getList().size());
+		System.out.println("有下页 = " + page.hasNextPage());
+		System.out.println("有上页 = " + page.hasPreviousPage());
+		System.out.println("有内容 = " + page.hasContent());
+
+	}
+
+	@Test
+	void findByAgeOrderByIdDescLimit() {
+//		this.nnnnnnnnn.deleteAll();
+
+		final int status = 1;
+
+		final List<NumberEntity> list = this.nnnnnnnnn.findByStatusOrderByIdDescLimit(status, 0,13200);
+		System.out.println("list.size = " + list.size());
+		System.out.println("list = " + list);
+	}
+
+
+	@Test
+	void findByIdLessThanEquals() {
+
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.findByIdLessThanEquals()");
+
+		final List<NumberEntity> findByIdLessThanEquals = this.nnnnnnnnn.findByAgeLessThanEquals(200000);
+		System.out.println("findByIdLessThanEquals.size = " + findByIdLessThanEquals.size());
+	}
+
+
+	@Test
+	void save_b() {
+
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.save_b()");
+
+		final int n = 1000;
+
+		final AtomicInteger w = new AtomicInteger(0);
+
+		final Set<NumberEntity> ssss = Sets.newConcurrentHashSet();
+		for (int i = 1; i <= n; i++) {
+			final NumberEntity entity = new NumberEntity();
+			entity.setAge(i);
+
+			final boolean executeInQueue = this.ze.executeInQueue(() -> {
+				final NumberEntity save = this.nnnnnnnnn.save(entity);
+				ssss.add(save);
+				w.incrementAndGet();
+			});
+		}
+
+		while (w.get() < n) {
+
+		}
+		System.out.println("OK");
+		assertThat(w.get() == n);
+
+		final List<Integer> idl = ssss.stream().map(e -> e.getId()).collect(Collectors.toList());
+		assertThat(idl.size() == n);
+
+	}
+
+
 	@Test
 	void findByIdIN_B() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.findByIdIN_B()");
 
-		final int n = 1520;
+		final int n = 100;
 		final ArrayList<NumberEntity> sl = Lists.newArrayList();
 		for (int i = 1; i <= n; i++) {
 			final NumberEntity entity = new NumberEntity();
@@ -58,15 +148,18 @@ class SbZrepositoryTestApplicationTests {
 
 				@Override
 				public NumberEntity call() {
+//					System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+//							+ "SbZrepositoryTestApplicationTests.findByIdIN_B().new AbstractZETask() {...}.call()");
 					final NumberEntity e = SbZrepositoryTestApplicationTests.this.nnnnnnnnn.findById(id);
+					e.setName(Thread.currentThread().getName());
 					return e;
 				}
 			};
 			taskList.add(task);
 		}
 
-		final ZE ze = ZES.newZE(44);
-		final List<ZETaskResult<NumberEntity>> rl = ze.submitInQueue(taskList);
+
+		final List<ZETaskResult<NumberEntity>> rl = this.ze.submitInQueue(taskList);
 		int okC=0;
 		for (final ZETaskResult<NumberEntity> r : rl) {
 			final NumberEntity numberEntity = r.get();
@@ -75,6 +168,15 @@ class SbZrepositoryTestApplicationTests {
 			okC++;
 		}
 		assertThat(okC == n);
+
+		final List<NumberEntity> f2 = this.nnnnnnnnn.findByIdIn(saveAll);
+		assertThat(f2.size() == saveAll.size());
+
+		final boolean deleteByIdIn = this.nnnnnnnnn.deleteByIdIn(saveAll);
+		assertThat(deleteByIdIn);
+
+		final List<NumberEntity> fD2 = this.nnnnnnnnn.findByIdIn(saveAll);
+		assertThat(fD2.size() == 0);
 
 	}
 
@@ -332,17 +434,7 @@ class SbZrepositoryTestApplicationTests {
 	}
 
 	@Test
-	void findByAgeOrderByIdDescLimit() {
-		this.nnnnnnnnn.deleteAll();
-
-		final List<NumberEntity> list = this.nnnnnnnnn.findByAgeOrderByIdDescLimit(200, 1,100);
-		System.out.println("list.size = " + list.size());
-		System.out.println("list = " + list);
-	}
-
-	@Test
 	void test_countingBy() {
-		this.nnnnnnnnn.deleteAll();
 
 		final Long countingBy = this.nnnnnnnnn.countingByAge(200);
 		System.out.println("countingBy = " + countingBy);
@@ -350,7 +442,6 @@ class SbZrepositoryTestApplicationTests {
 
 	@Test
 	void test_findByNameEndingWith() {
-		this.nnnnnnnnn.deleteAll();
 
 		final List<NumberEntity> findByNameEndingWith = this.nnnnnnnnn.findByNameEndingWith("a");
 		System.out.println("findByNameEndingWith.size = " + findByNameEndingWith.size());
@@ -362,7 +453,6 @@ class SbZrepositoryTestApplicationTests {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "SbZrepositoryTestApplicationTests.test_count1()");
 
-		this.nnnnnnnnn.deleteAll();
 
 		final List<NumberEntity> findAll = this.nnnnnnnnn.findAll();
 		System.out.println("findAll.size = " + findAll.size());
@@ -383,7 +473,6 @@ class SbZrepositoryTestApplicationTests {
 
 	@Test
 	void test_findAll1() {
-		this.nnnnnnnnn.deleteAll();
 
 		final List<NumberEntity> findAll = this.nnnnnnnnn.findAll();
 		System.out.println("findAll.size = " + findAll.size());
@@ -720,7 +809,7 @@ class SbZrepositoryTestApplicationTests {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "SbZrepositoryTestApplicationTests.saveAll3()");
 
-		this.nnnnnnnnn.deleteAll();
+//		this.nnnnnnnnn.deleteAll();
 
 		final int k = 100;
 		final int n = 100;
@@ -736,7 +825,7 @@ class SbZrepositoryTestApplicationTests {
 				final ArrayList<NumberEntity> sl = Lists.newArrayList();
 				for (int i = 1; i <= n; i++) {
 					final NumberEntity entity = new NumberEntity();
-					entity.setAge(33333333);
+					entity.setAge(33333333);entity.setStatus(1);
 					sl.add(entity);
 				}
 				SbZrepositoryTestApplicationTests.this.nnnnnnnnn.saveAll(sl);
@@ -749,7 +838,7 @@ class SbZrepositoryTestApplicationTests {
 		while(wanch.get() < k) {
 
 		}
-		this.nnnnnnnnn.deleteAll();
+//		this.nnnnnnnnn.deleteAll();
 
 		System.out.println("OK");
 	}
