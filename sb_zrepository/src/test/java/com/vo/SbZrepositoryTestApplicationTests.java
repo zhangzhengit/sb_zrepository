@@ -15,6 +15,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.vo.core.Page;
+import com.vo.test.Number2Entity;
+import com.vo.test.Number2ZRepository;
 import com.vo.test.NumberEntity;
 import com.vo.test.NumberZRepository;
 import com.votool.ze.AbstractZETask;
@@ -35,9 +37,94 @@ import cn.hutool.core.lang.UUID;
 class SbZrepositoryTestApplicationTests {
 
 	@Autowired
+	Number2ZRepository mmmmmm;
+
+	@Autowired
 	NumberZRepository nnnnnnnnn;
 
 	final ZE ze = ZES.newZE(Runtime.getRuntime().availableProcessors() * 10);
+
+	@Test
+	void NN_MMM2() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.NN_MMM2()");
+
+		final int n = 300;
+
+		final AtomicInteger w = new AtomicInteger(0);
+		final Set<Object> ssss = Sets.newConcurrentHashSet();
+
+		final Thread thread1 = new Thread(() -> {
+			for (int i = 1; i <= n; i++) {
+				final NumberEntity entity = new NumberEntity();
+				entity.setAge(i);
+				final NumberEntity save = SbZrepositoryTestApplicationTests.this.nnnnnnnnn.save(entity);
+				ssss.add(save);
+			}
+		});
+		thread1.setName("NNNNNNN");
+
+
+		final Thread thread2 = new Thread(() -> {
+			for (int i = 1; i <= n; i++) {
+				final Number2Entity entity2 = new Number2Entity();
+				entity2.setAge(666);
+				final Number2Entity save2 = SbZrepositoryTestApplicationTests.this.mmmmmm.save(entity2);
+				ssss.add(save2);
+			}
+		});
+		thread2.setName("MMMMMMM");
+
+		thread1.start();
+		thread2.start();
+
+		while(ssss.size() < n * 2) {
+
+		}
+		System.out.println("OK");
+
+
+	}
+	@Test
+	void NN_MMM() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.NN_MMM()");
+
+		final int n = 300;
+
+		final AtomicInteger w = new AtomicInteger(0);
+
+		final Set<Object> ssss = Sets.newConcurrentHashSet();
+		for (int i = 1; i <= n; i++) {
+			final NumberEntity entity = new NumberEntity();
+			entity.setAge(i);
+
+			final boolean executeInQueue = this.ze.executeInQueue(() -> {
+				final NumberEntity save = this.nnnnnnnnn.save(entity);
+				ssss.add(save);
+
+				w.incrementAndGet();
+			});
+			final boolean executeInQueu2e = this.ze.executeInQueue(() -> {
+
+				final Number2Entity entity2 = new Number2Entity();
+				entity2.setAge(666);
+				final Number2Entity save2 = this.mmmmmm.save(entity2);
+				ssss.add(save2);
+
+				w.incrementAndGet();
+			});
+		}
+
+		while(w.get() < n * 2) {
+
+		}
+		System.out.println("OK");
+		System.out.println("sss.size = " + ssss.size());
+
+
+	}
+
 
 	@Test
 	void page_1() {
@@ -809,14 +896,14 @@ class SbZrepositoryTestApplicationTests {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "SbZrepositoryTestApplicationTests.saveAll3()");
 
-//		this.nnnnnnnnn.deleteAll();
+		this.nnnnnnnnn.deleteAll();
 
 		final int k = 100;
 		final int n = 100;
 
 		final AtomicInteger wanch = new AtomicInteger();
 
-		final ZE ze = ZES.newZE(34);
+		final ZE ze = ZES.newZE(8);
 		for (int x = 1; x <= k; x++) {
 
 			ze.executeInQueue(() -> {

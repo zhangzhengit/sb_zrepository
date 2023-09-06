@@ -595,8 +595,6 @@ public class ZRepositoryMain {
 
 			final ZMethod zm = new ZMethod();
 			zm.setAbstract(false);
-			// FIXME 2023年9月6日 下午3:54:50 zhanghen: 加入 zm.setSynchronized(true);后ZR子接口的代理类的自定义方法上加了sync，是否合理？
-			zm.setSynchronized(true);
 			zm.setName(method.getName());
 			final Class<?> returnType = method.getReturnType();
 			zm.setReturnType(returnType.getCanonicalName());

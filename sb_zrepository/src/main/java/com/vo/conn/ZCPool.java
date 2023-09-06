@@ -148,7 +148,7 @@ public class ZCPool {
 	 * @param zConnection
 	 *
 	 */
-	public synchronized void returnZConnectionAndCommit(final ZConnection zConnection) {
+	public void returnZConnectionAndCommit(final ZConnection zConnection) {
 		for (final ZConnection zc : this.writeVector) {
 			if (zc.getConnection() == zConnection.getConnection()) {
 				try {
