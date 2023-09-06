@@ -22,6 +22,7 @@ extends ZRepository<NumberEntity, Integer>
 	List<NumberEntity> findByAgeOrderByIdDescLimit(Integer age, Integer offset, Integer count);
 
 	List<NumberEntity> findByAgeIsNull(Integer age);
+	List<NumberEntity> findByAgeIn(List<Integer> ageList);
 
 	List<NumberEntity> findByAge(Integer age);
 

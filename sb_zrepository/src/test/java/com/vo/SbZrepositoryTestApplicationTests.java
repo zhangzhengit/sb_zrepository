@@ -1,6 +1,7 @@
 package com.vo;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,6 +37,116 @@ class SbZrepositoryTestApplicationTests {
 	NumberZRepository nnnnnnnnn;
 
 	@Test
+	void findByXXIn() {
+		this.nnnnnnnnn.deleteAll();
+
+
+		final NumberEntity entity = new NumberEntity();
+		entity.setAge(12345);
+
+		this.nnnnnnnnn.save(entity);
+
+		final List<NumberEntity> findByAgeIn = this.nnnnnnnnn.findByAgeIn(Lists.newArrayList(1, 21, 33, 42323, 5, 12345));
+		System.out.println("findByAgeIn = " + findByAgeIn);
+
+		assertThat(findByAgeIn.size() == 1);
+
+
+	}
+
+	@Test
+	void save_BING() {
+		final int n = 5050;
+
+//		final ArrayList<NumberEntity> sl = Lists.newArrayList();
+
+		final ArrayList<AbstractZETask<NumberEntity>> taskList = Lists.newArrayList();
+
+		for (int i = 1; i <= n; i++) {
+			final NumberEntity entity = new NumberEntity();
+			entity.setAge(12345);
+
+
+			final AbstractZETask<NumberEntity> task = new AbstractZETask<NumberEntity>() {
+
+				@Override
+				public NumberEntity call() {
+					final NumberEntity e = SbZrepositoryTestApplicationTests.this.nnnnnnnnn.save(entity);
+					return e;
+				}
+			};
+			taskList.add(task);
+		}
+
+
+		final ZE ze = ZES.newZE();
+		final List<ZETaskResult<NumberEntity>> sxl = ze.submitInQueue(taskList);
+
+		final HashSet<Object> idSet = Sets.newHashSet();
+		for (final ZETaskResult<NumberEntity> r : sxl) {
+			System.out.println("r = " + r.get());
+			idSet.add(r.get().getId());
+		}
+
+		assertThat(idSet.size() == n);
+	}
+
+
+	@Test
+	void deleteByIdIn2() {
+
+		final int n = 5050;
+
+		final ArrayList<NumberEntity> sl = Lists.newArrayList();
+		for (int i = 1; i <= n; i++) {
+			final NumberEntity entity = new NumberEntity();
+			entity.setAge(12345);
+			sl.add(entity);
+
+		}
+
+		final List<Integer> saveAll = this.nnnnnnnnn.saveAll(sl);
+		System.out.println("saveAll.size = " + saveAll.size());
+		assertThat(saveAll.size() == n);
+
+		final ArrayList<AbstractZETask<Boolean>> taskList = Lists.newArrayList();
+		for (final Integer id : saveAll) {
+
+			final AbstractZETask<Boolean> task = new AbstractZETask<Boolean>() {
+
+				@Override
+				public Boolean call() {
+					final boolean deleteById = SbZrepositoryTestApplicationTests.this.nnnnnnnnn.deleteById(id);
+					return deleteById;
+				}
+			};
+			taskList.add(task);
+		}
+
+		final ZE ze = ZES.newZE();
+		final List<ZETaskResult<Boolean>> sxl = ze.submitInQueue(taskList);
+
+		int okC = 0;
+		for (final ZETaskResult<Boolean> result : sxl) {
+			System.out.println("result = " + result.get());
+			if(result.get()) {
+				okC++;
+			}
+		}
+
+		assertThat(okC == saveAll.size());
+		assertThat(okC == n);
+
+		final List<NumberEntity> f2 = this.nnnnnnnnn.findByIdIn(saveAll);
+		assertThat(f2.size() == 0);
+
+		System.out.println("OK");
+
+		this.nnnnnnnnn.deleteAll();
+	}
+
+
+	@Test
 	void deleteByIdIn1() {
 
 		final int n = 12220;
@@ -51,6 +162,9 @@ class SbZrepositoryTestApplicationTests {
 		final List<Integer> saveAll = this.nnnnnnnnn.saveAll(sl);
 		System.out.println("saveAll.size = " + saveAll.size());
 		final boolean deleteByIdIn = this.nnnnnnnnn.deleteByIdIn(saveAll);
+
+		final List<NumberEntity> findByIdIn = this.nnnnnnnnn.findByIdIn(saveAll);
+		assertThat(findByIdIn.size() == 0);
 	}
 
 	@Test
