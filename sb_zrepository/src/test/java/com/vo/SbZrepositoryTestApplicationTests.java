@@ -39,7 +39,7 @@ class SbZrepositoryTestApplicationTests {
 	@Test
 	void findByIdIN_B() {
 
-		final int n = 1050;
+		final int n = 1520;
 		final ArrayList<NumberEntity> sl = Lists.newArrayList();
 		for (int i = 1; i <= n; i++) {
 			final NumberEntity entity = new NumberEntity();

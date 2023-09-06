@@ -92,6 +92,7 @@ public class ZCPool {
 	}
 
 	private ZConnection getREAD() {
+
 		final int ms = 1000 * 10;
 		for (int i = 1; i <= ms; i++) {
 			final Optional<ZConnection> findFirst = this.readVector.stream().filter(zc -> !zc.getBusy()).findFirst();

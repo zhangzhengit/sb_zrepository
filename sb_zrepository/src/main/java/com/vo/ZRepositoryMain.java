@@ -316,7 +316,7 @@ public class ZRepositoryMain {
 
 
 	// FIXME 2023年9月5日 下午9:46:27 zhanghen: 改为private，并且在第一步scanZR子接口时就校验
-	public static void checkTableExist(final Set<Class<?>> zrClassSet) {
+	public synchronized static void checkTableExist(final Set<Class<?>> zrClassSet) {
 		for (final Class<?> class1 : zrClassSet) {
 			final String[] typeArray = UserRepositoryTest1.findZRSubclassFanxing(class1);
 			final String type = typeArray[0];
@@ -324,7 +324,8 @@ public class ZRepositoryMain {
 				final Class<?> typeClass = Class.forName(type);
 				final ZEntity zEntity = typeClass.getAnnotation(ZEntity.class);
 
-				checkZEntity_TableNameExist(zEntity.tableName());
+				checkZEntity_TableNameExist(zEntity.tableName(), ZCPool.getInstance().getZConnection(Mode.WRITE));
+				checkZEntity_TableNameExist(zEntity.tableName(), ZCPool.getInstance().getZConnection(Mode.READ));
 			} catch (final ClassNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -387,13 +388,13 @@ public class ZRepositoryMain {
 	 * 校验 @ZEntity 指定的tableName是否存在
 	 *
 	 * @param tableName
+	 * @param zc TODO
 	 *
 	 */
-	private static void checkZEntity_TableNameExist(final String tableName) {
+	private static void checkZEntity_TableNameExist(final String tableName, final ZConnection zc) {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "ZRepositoryMain.checkZEntity_TableNameExist()");
 
-		final ZConnection zc = ZCPool.getInstance().getZConnection(Mode.READ);
 		ResultSet rs = null;
 		final Connection connection = zc.getConnection();
 		try {
@@ -1077,11 +1078,11 @@ public class ZRepositoryMain {
 
 		final String name = zidList.get(0).getName();
 
+		connnection(typeClass, name, ZCPool.getInstance().getZConnection(Mode.WRITE));
 		connnection(typeClass, name, ZCPool.getInstance().getZConnection(Mode.READ));
 
-		connnection(typeClass, name, ZCPool.getInstance().getZConnection(Mode.WRITE));
-
-		checkZEntityFiled(typeClass);
+		checkZEntityFiled(typeClass, ZCPool.getInstance().getZConnection(Mode.WRITE));
+		checkZEntityFiled(typeClass, ZCPool.getInstance().getZConnection(Mode.READ));
 
 	}
 
@@ -1089,18 +1090,19 @@ public class ZRepositoryMain {
 	 * 校验 @ZEntity 类里的属性，必须和表的列名和类型匹配
 	 *
 	 * @param typeClass
+	 * @param zConnection
 	 *
 	 */
-	private static void checkZEntityFiled(final Class<?> typeClass) {
-
-		final ZConnection zConnection = ZCPool.getInstance().getZConnection(Mode.READ);
+	private static void checkZEntityFiled(final Class<?> typeClass, final ZConnection zConnection) {
 
 		final String tableName = typeClass.getAnnotation(ZEntity.class).tableName();
 
 		final Field[] fs = typeClass.getDeclaredFields();
 
+		final Connection connection = zConnection.getConnection();
 		try {
-			final DatabaseMetaData metaData = zConnection.getConnection().getMetaData();
+			connection.setAutoCommit(false);
+			final DatabaseMetaData metaData = connection.getMetaData();
 
 			try (ResultSet columns = metaData.getColumns(null, null, tableName, null)) {
 				System.out.println("tablename = " + tableName);
@@ -1118,6 +1120,13 @@ public class ZRepositoryMain {
 
 		} catch (final SQLException e) {
 			e.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
+		} finally {
+			ZCPool.getInstance().returnZConnectionAndCommit(zConnection);
 		}
 
 	}
