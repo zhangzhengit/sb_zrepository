@@ -147,16 +147,30 @@ public class ZCPool {
 	 * @param zConnection
 	 *
 	 */
-	public synchronized void returnZConnection(final ZConnection zConnection) {
+	public synchronized void returnZConnectionAndCommit(final ZConnection zConnection) {
 		for (final ZConnection zc : this.writeVector) {
 			if (zc.getConnection() == zConnection.getConnection()) {
+				try {
+					zConnection.getConnection().commit();
+				} catch (final SQLException e) {
+					e.printStackTrace();
+				}
 				zc.setBusy(false);
+
+				break;
 			}
 		}
 
 		for (final ZConnection zc : this.readVector) {
 			if (zc.getConnection() == zConnection.getConnection()) {
+				try {
+					zConnection.getConnection().commit();
+				} catch (final SQLException e) {
+					e.printStackTrace();
+				}
 				zc.setBusy(false);
+
+				break;
 			}
 		}
 	}

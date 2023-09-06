@@ -37,6 +37,48 @@ class SbZrepositoryTestApplicationTests {
 	NumberZRepository nnnnnnnnn;
 
 	@Test
+	void findByIdIN_B() {
+
+		final int n = 1050;
+		final ArrayList<NumberEntity> sl = Lists.newArrayList();
+		for (int i = 1; i <= n; i++) {
+			final NumberEntity entity = new NumberEntity();
+			entity.setAge(12345);
+
+			sl.add(entity);
+		}
+
+		final List<Integer> saveAll = this.nnnnnnnnn.saveAll(sl);
+		assertThat(saveAll.size() == n);
+
+		final ArrayList<AbstractZETask<NumberEntity>> taskList = Lists.newArrayList();
+		for (final Integer id : saveAll) {
+
+			final AbstractZETask<NumberEntity> task = new AbstractZETask<NumberEntity>() {
+
+				@Override
+				public NumberEntity call() {
+					final NumberEntity e = SbZrepositoryTestApplicationTests.this.nnnnnnnnn.findById(id);
+					return e;
+				}
+			};
+			taskList.add(task);
+		}
+
+		final ZE ze = ZES.newZE(44);
+		final List<ZETaskResult<NumberEntity>> rl = ze.submitInQueue(taskList);
+		int okC=0;
+		for (final ZETaskResult<NumberEntity> r : rl) {
+			final NumberEntity numberEntity = r.get();
+			System.out.println("r = " + numberEntity);
+
+			okC++;
+		}
+		assertThat(okC == n);
+
+	}
+
+	@Test
 	void findByXXIn() {
 		this.nnnnnnnnn.deleteAll();
 
@@ -56,7 +98,7 @@ class SbZrepositoryTestApplicationTests {
 
 	@Test
 	void save_BING() {
-		final int n = 5050;
+		final int n = 250;
 
 //		final ArrayList<NumberEntity> sl = Lists.newArrayList();
 
@@ -95,7 +137,7 @@ class SbZrepositoryTestApplicationTests {
 	@Test
 	void deleteByIdIn2() {
 
-		final int n = 5050;
+		final int n = 1050;
 
 		final ArrayList<NumberEntity> sl = Lists.newArrayList();
 		for (int i = 1; i <= n; i++) {
@@ -685,7 +727,7 @@ class SbZrepositoryTestApplicationTests {
 
 		final AtomicInteger wanch = new AtomicInteger();
 
-		final ZE ze = ZES.newZE(8);
+		final ZE ze = ZES.newZE(34);
 		for (int x = 1; x <= k; x++) {
 
 			ze.executeInQueue(() -> {

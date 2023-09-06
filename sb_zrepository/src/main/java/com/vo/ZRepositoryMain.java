@@ -194,7 +194,7 @@ public class ZRepositoryMain {
 //			System.out.println("T =" + t);
 		}
 
-		ZCPool.getInstance().returnZConnection(zc);
+		ZCPool.getInstance().returnZConnectionAndCommit(zc);
 
 		return r;
 	}
@@ -393,10 +393,12 @@ public class ZRepositoryMain {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "ZRepositoryMain.checkZEntity_TableNameExist()");
 
-		final ZConnection connection = ZCPool.getInstance().getZConnection(Mode.READ);
+		final ZConnection zc = ZCPool.getInstance().getZConnection(Mode.READ);
 		ResultSet rs = null;
+		final Connection connection = zc.getConnection();
 		try {
-			final DatabaseMetaData metaData = connection.getConnection().getMetaData();
+			connection.setAutoCommit(false);
+			final DatabaseMetaData metaData = connection.getMetaData();
 			rs = metaData.getTables(null, null, tableName, null);
 			if (!rs.next()) {
 				throw new IllegalArgumentException(
@@ -404,8 +406,13 @@ public class ZRepositoryMain {
 			}
 		} catch (final SQLException e) {
 			e.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
 		} finally {
-			ZCPool.getInstance().returnZConnection(connection);
+			ZCPool.getInstance().returnZConnectionAndCommit(zc);
 			if (rs != null) {
 				try {
 					rs.close();
@@ -586,6 +593,8 @@ public class ZRepositoryMain {
 
 			final ZMethod zm = new ZMethod();
 			zm.setAbstract(false);
+			// FIXME 2023年9月6日 下午3:54:50 zhanghen: 加入 zm.setSynchronized(true);后ZR子接口的代理类的自定义方法上加了sync，是否合理？
+			zm.setSynchronized(true);
 			zm.setName(method.getName());
 			final Class<?> returnType = method.getReturnType();
 			zm.setReturnType(returnType.getCanonicalName());
@@ -615,7 +624,7 @@ public class ZRepositoryMain {
 
 			zm.setgReturn(false);
 			zm.setMethodArgList(argLIst);
-
+			// FIXME 2023年9月6日 下午3:16:13 zhanghen: Save 方法加入sync关键字，因为它有save和findBYid两个方法组成
 
 
 			zmSet.add(zm);
@@ -655,16 +664,18 @@ public class ZRepositoryMain {
 
 		case "save":
 
-			final String string =
-				   "Object id = " + SU.class.getCanonicalName() + ".save(" + modeString + ", classType,t,sql);" + "\n\t"
-				+ "final Object v1 = com.vo.ZC.get(\"myZRSubclass_save_getInterfaces_0.getCanonicalName\");" + "\n\t"
-				+ "final Object v = v1 == null ? this.getClass().getInterfaces()[0].getCanonicalName() : v1;" + "\n\t"
-				+ "final String zrCN = String.valueOf(v);" + "\n\t"
-				+ "com.vo.ZC.put(\"myZRSubclass_save_getInterfaces_0.getCanonicalName\", v);" + "\n\t"
-				+ "final String findByIDSql = "+ZRSqlMap.class.getCanonicalName()+".get(zrCN, \"findById\");"  + "\n\t"
-				+ "return "+SU.class.getCanonicalName()+".findById(" + modeString + ", id, this.classType, findByIDSql);";
+			return "return " + SU.class.getCanonicalName() + ".save(" + modeString + ", classType,t,sql);";
 
-			return string;
+//			final String string =
+//				   "Object id = " + SU.class.getCanonicalName() + ".save(" + modeString + ", classType,t,sql);" + "\n\t"
+//				+ "final Object v1 = com.vo.ZC.get(\"myZRSubclass_save_getInterfaces_0.getCanonicalName\");" + "\n\t"
+//				+ "final Object v = v1 == null ? this.getClass().getInterfaces()[0].getCanonicalName() : v1;" + "\n\t"
+//				+ "final String zrCN = String.valueOf(v);" + "\n\t"
+//				+ "com.vo.ZC.put(\"myZRSubclass_save_getInterfaces_0.getCanonicalName\", v);" + "\n\t"
+//				+ "final String findByIDSql = "+ZRSqlMap.class.getCanonicalName()+".get(zrCN, \"findById\");"  + "\n\t"
+//				+ "return "+SU.class.getCanonicalName()+".findById(" + modeString + ", id, this.classType, findByIDSql);";
+//
+//			return string;
 
 		case "existById":
 
@@ -1149,15 +1160,22 @@ public class ZRepositoryMain {
 	static HashSet<Class> cc = Sets.newHashSet();
 
 	private static void connnection(final Class<?> typeClass, final String name, final ZConnection zConnection) {
+		final Connection connection = zConnection.getConnection();
 		try {
+			connection.setAutoCommit(false);
 
-			final DatabaseMetaData metaData = zConnection.getConnection().getMetaData();
+			final DatabaseMetaData metaData = connection.getMetaData();
 
 			c(typeClass, name, metaData);
 		} catch (final SQLException e) {
 			e.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
 		} finally {
-			ZCPool.getInstance().returnZConnection(zConnection);
+			ZCPool.getInstance().returnZConnectionAndCommit(zConnection);
 		}
 	}
 

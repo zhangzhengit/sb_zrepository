@@ -55,7 +55,7 @@ public class ZTransactionAspect {
 		} catch (final SQLException e1) {
 			e1.printStackTrace();
 		} finally {
-			ZCPool.getInstance().returnZConnection(zc);
+			ZCPool.getInstance().returnZConnectionAndCommit(zc);
 		}
 
 		ZCONNECTION_THREADLOCAL.set(zc);
@@ -78,7 +78,7 @@ public class ZTransactionAspect {
 			} catch (final SQLException e) {
 				e.printStackTrace();
 			}
-			ZCPool.getInstance().returnZConnection(zc);
+			ZCPool.getInstance().returnZConnectionAndCommit(zc);
 		}
 
 		return null;

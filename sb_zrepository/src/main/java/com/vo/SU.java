@@ -43,7 +43,7 @@ public class SU {
 	private static final ZLog2 LOG = ZLog2.getInstance();
 	private static final ZDatasourceProperties ZDP = ZDatasourcePropertiesLoader.getInstance();
 
-	private static final ZCPool instance = ZCPool.getInstance();
+	private static final ZCPool INSTANCE = ZCPool.getInstance();
 
 	public static <T> T update(final Mode mode, final Class<T> cls, final T t, final String sql) {
 		final Field[] fs = t.getClass().getDeclaredFields();
@@ -131,7 +131,7 @@ public class SU {
 			} catch (final SQLException e1) {
 				e1.printStackTrace();
 			}
-			ZCPool.getInstance().returnZConnection(zc);
+			ZCPool.getInstance().returnZConnectionAndCommit(zc);
 			close(ps);
 		}
 
@@ -140,7 +140,7 @@ public class SU {
 
 	public static <T> boolean deleteAll(final Mode mode, final Class<T> cls, final String sql) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 		try {
 			connection.setAutoCommit(false);
@@ -170,12 +170,12 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
-			instance.returnZConnection(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(ps);
 		}
 
@@ -186,7 +186,7 @@ public class SU {
 		System.out.println(
 				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "SU.deleteByIdIn()");
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 		try {
 			connection.setAutoCommit(false);
@@ -226,20 +226,20 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
-			instance.returnZConnection(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(ps);
 		}
 
 		return false;
 	}
 
-	public static <T> boolean deleteById(final Mode mode, final Object id, final Class<T> cls, final String sql) {
-		final ZConnection zc = getZC(mode);
+	public  static <T> boolean deleteById(final Mode mode, final Object id, final Class<T> cls, final String sql) {
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 		try {
 			connection.setAutoCommit(false);
@@ -274,7 +274,7 @@ public class SU {
 				e1.printStackTrace();
 			}
 			close(ps);
-			instance.returnZConnection(zc);
+			INSTANCE.returnZConnectionAndCommit(zc);
 		}
 
 		return false;
@@ -282,7 +282,7 @@ public class SU {
 
 	public static <T> boolean existById(final Mode mode, final Object id, final Class<T> cls, final String sql) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		try {
@@ -316,12 +316,12 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
-			instance.returnZConnection(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
@@ -329,7 +329,7 @@ public class SU {
 	}
 
 
-	public static <T> List<Object> saveAll(final Mode mode, final Class<T> cls, final String sqlParam, final List<T> tList) {
+	public static  <T> List<Object> saveAll(final Mode mode, final Class<T> cls, final String sqlParam, final List<T> tList) {
 		System.out.println(
 				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "SU.saveAll()");
 
@@ -345,7 +345,7 @@ public class SU {
 					"类中无 " + ZID.class.getSimpleName() + " 字段，cls = " + cls.getCanonicalName());
 		}
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		final String sql = generateSaveAllSQL(cls, sqlParam);
@@ -432,12 +432,12 @@ public class SU {
 			}
 
 		} finally {
-			try {
-				connection.commit();
-				instance.returnZConnection(zc);
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
+			INSTANCE.returnZConnectionAndCommit(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
 			close(rs, ps);
 		}
 
@@ -457,8 +457,8 @@ public class SU {
 		return sql2;
 	}
 
-	public static <T> Object save(final Mode mode, final Class<T> cls, final T t, final String sql) {
-		final ZConnection zc = getZC(mode);
+	public  static <T> T save(final Mode mode, final Class<T> cls, final T t, final String sql) {
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		try {
@@ -486,12 +486,12 @@ public class SU {
 			final ZEntity zEntity = t.getClass().getAnnotation(ZEntity.class);
 
 
+			final String selectById = "select * from " + zEntity.tableName() + " where id = ?";
 			// update
 			if (idValue != null) {
 				// select
-				final String selectById = "select * from " + zEntity.tableName() + " where id = ?";
 
-				final T findById = findById(mode, idValue, cls, selectById);
+				final T findById = findById(mode, idValue, cls, selectById, zc);
 				if (findById != null) {
 //				update user set online_status = 1,show_online_status = 1 where id = 1;
 					final String idDBColumn = ZFieldConverter.toDbField(idField.getName());
@@ -531,7 +531,11 @@ public class SU {
 					final PreparedStatement prepareStatement = connection.prepareStatement(updateSQL);
 					prepareStatement.execute();
 					prepareStatement.close();
-					return idValue;
+//					return idValue;
+
+					// 2 返回T
+					final T findByIdNew = findById(mode, idValue, cls, selectById, zc);
+					return findByIdNew;
 				}
 			}
 
@@ -550,7 +554,9 @@ public class SU {
 			rs = statement.getGeneratedKeys();
 			if (rs.next()) {
 				final Object id = rs.getObject(1);
-				return id;
+//				return id;
+				final T findByIdNew = findById(mode, id, cls, selectById, zc);
+				return findByIdNew;
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -560,12 +566,12 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
-			instance.returnZConnection(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, statement);
 		}
 
@@ -573,15 +579,25 @@ public class SU {
 
 	}
 
-	private static ZConnection getZC(final Mode mode) {
+	private static ZConnection getZCAndSetAutoCommitFALSE(final Mode mode) {
 		// FIXME 2023年6月18日 上午12:00:42 zhanghen: 先从 ZTAs 拿，无再从下面方法拿
 		final ZConnection zcT = ZTransactionAspect.ZCONNECTION_THREADLOCAL.get();
 		if (zcT != null) {
+			try {
+				zcT.getConnection().setAutoCommit(false);
+			} catch (final SQLException e) {
+				e.printStackTrace();
+			}
 			return zcT;
 		}
 
 		// FIXME 2023年9月6日 下午2:33:36 zhanghen: 在此setAutoCommit(false)然后在归还方法里commit?
-		final ZConnection zc = instance.getZConnection(mode);
+		final ZConnection zc = INSTANCE.getZConnection(mode);
+		try {
+			zc.getConnection().setAutoCommit(false);
+		} catch (final SQLException e) {
+			e.printStackTrace();
+		}
 		return zc;
 	}
 
@@ -621,7 +637,7 @@ public class SU {
 		System.out.println(
 				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "SU.findAll()");
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		try {
@@ -659,7 +675,7 @@ public class SU {
 
 				r.add(t);
 			}
-			instance.returnZConnection(zc);
+			INSTANCE.returnZConnectionAndCommit(zc);
 			return r;
 
 		} catch (SQLException | InstantiationException | IllegalAccessException | NoSuchFieldException
@@ -671,13 +687,13 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
 
-			instance.returnZConnection(zc);
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
@@ -686,7 +702,7 @@ public class SU {
 
 	public static <T> List<T> findByIdIn(final Mode mode, final List<Object> idList, final Class<T> cls, final String sql) {
 
-		final ZConnection zc = instance.getZConnection(mode);
+		final ZConnection zc = INSTANCE.getZConnection(mode);
 		final Connection connection = zc.getConnection();
 
 		try {
@@ -732,21 +748,20 @@ public class SU {
 			}
 		} finally {
 
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
-			instance.returnZConnection(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
 		return null;
 	}
 
-	public static <T> T findById(final Mode mode, final Object id, final Class<T> cls, final String sql) {
+	private  static <T> T findById(final Mode mode, final Object id, final Class<T> cls, final String sql,final ZConnection zc) {
 
-		final ZConnection zc = instance.getZConnection(mode);
 		final Connection connection = zc.getConnection();
 
 		try {
@@ -786,17 +801,16 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
-
-			instance.returnZConnection(zc);
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
 		return null;
+	}
+
+	public static <T> T findById(final Mode mode, final Object id, final Class<T> cls, final String sql) {
+		final ZConnection zc = INSTANCE.getZConnection(mode);
+		return findById(mode, id, cls, sql, zc);
 	}
 
 	private static <T> T newT(final Class<T> cls, final ResultSet rs, final ResultSetMetaData metaData, final int count)
@@ -815,7 +829,7 @@ public class SU {
 
 	public static <T> List<T> findByXX(final Mode mode, final Class<T> cls, final String sql, final Object... fieldArray) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 		try {
 			connection.setAutoCommit(false);
@@ -860,12 +874,12 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
-			instance.returnZConnection(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
@@ -874,7 +888,7 @@ public class SU {
 
 	public static <T> List<T> findByXX(final Mode mode, final Class<T> cls, final String sql, final Object fieldValue) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		PreparedStatement ps = null;
@@ -911,12 +925,12 @@ public class SU {
 			}
 			e.printStackTrace();
 		} finally {
-			instance.returnZConnection(zc);
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
+			INSTANCE.returnZConnectionAndCommit(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
 			close(rs, ps);
 		}
 
@@ -925,7 +939,7 @@ public class SU {
 
 	public static <T> List<T> findByXXIn(final Mode mode, final Class<T> cls, final String sql, final Object... fieldArray) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		try {
@@ -988,12 +1002,12 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
-			instance.returnZConnection(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, statement);
 		}
 
@@ -1002,7 +1016,7 @@ public class SU {
 
 	public static <T> List<T> findByIdLessThan(final Mode mode, final Class<T> cls, final String sql, final Object field) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		PreparedStatement ps = null;
@@ -1040,12 +1054,12 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			instance.returnZConnection(zc);
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
+			INSTANCE.returnZConnectionAndCommit(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
 			close(rs, ps);
 		}
 
@@ -1054,7 +1068,7 @@ public class SU {
 
 	public static <T> List<T> findByXXXEndingWith(final Mode mode, final Class<T> cls, final String sql, final Object field) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		PreparedStatement ps = null;
@@ -1091,12 +1105,12 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			instance.returnZConnection(zc);
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
+			INSTANCE.returnZConnectionAndCommit(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
 
 			close(rs, ps);
 		}
@@ -1105,7 +1119,7 @@ public class SU {
 	}
 	public static <T> List<T> findByXXXStartingWith(final Mode mode, final Class<T> cls, final String sql, final Object field) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		PreparedStatement ps = null;
@@ -1142,12 +1156,12 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			instance.returnZConnection(zc);
-			try {
-				connection.commit();
-			} catch (final SQLException e) {
-				e.printStackTrace();
-			}
+			INSTANCE.returnZConnectionAndCommit(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e) {
+//				e.printStackTrace();
+//			}
 			close(rs, ps);
 		}
 
@@ -1155,7 +1169,7 @@ public class SU {
 	}
 	public static <T> List<T> findByXXLike(final Mode mode, final Class<T> cls, final String sql, final Object field) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		PreparedStatement ps = null;
@@ -1186,8 +1200,13 @@ public class SU {
 		} catch (SQLException | InstantiationException | IllegalAccessException | NoSuchFieldException
 				| SecurityException e) {
 			e.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
 		} finally {
-			instance.returnZConnection(zc);
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
@@ -1196,7 +1215,7 @@ public class SU {
 
 	public static <T> List<T> findByXXIsNull(final Mode mode, final Class<T> cls, final String sql) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		PreparedStatement ps = null;
@@ -1225,8 +1244,13 @@ public class SU {
 		} catch (SQLException | InstantiationException | IllegalAccessException | NoSuchFieldException
 				| SecurityException e) {
 			e.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
 		} finally {
-			instance.returnZConnection(zc);
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
@@ -1235,7 +1259,7 @@ public class SU {
 
 	public static <T> Long count(final Mode mode, final Class<T> cls, final String sql) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		try {
@@ -1268,12 +1292,12 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			try {
-				connection.commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
-			instance.returnZConnection(zc);
+//			try {
+//				connection.commit();
+//			} catch (final SQLException e1) {
+//				e1.printStackTrace();
+//			}
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
@@ -1282,7 +1306,7 @@ public class SU {
 
 	public static <T> Long countingByXX(final Mode mode, final Class<T> cls, final String sql, final Object field) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		PreparedStatement ps = null;
@@ -1307,8 +1331,13 @@ public class SU {
 
 		} catch (SQLException | SecurityException e) {
 			e.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
 		} finally {
-			instance.returnZConnection(zc);
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
@@ -1317,7 +1346,7 @@ public class SU {
 
 	public static <T> List<T> findByXXOrderByXXLimit(final Mode mode, final Class<T> cls, final String sql, final Object... field) {
 
-		final ZConnection zc = getZC(mode);
+		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
 		PreparedStatement ps = null;
@@ -1350,8 +1379,13 @@ public class SU {
 
 		} catch (SQLException | SecurityException | InstantiationException | IllegalAccessException | NoSuchFieldException e) {
 			e.printStackTrace();
+			try {
+				connection.rollback();
+			} catch (final SQLException e1) {
+				e1.printStackTrace();
+			}
 		} finally {
-			instance.returnZConnection(zc);
+			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
