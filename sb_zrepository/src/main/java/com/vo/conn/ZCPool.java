@@ -75,7 +75,7 @@ public class ZCPool {
 	 * @return
 	 *
 	 */
-	public synchronized ZConnection getZConnection(final Mode mode) {
+	public ZConnection getZConnection(final Mode mode) {
 		if (mode == Mode.WRITE) {
 
 			return this.getWRITE();
@@ -182,7 +182,7 @@ public class ZCPool {
 	 * @param zConnection
 	 *
 	 */
-	public synchronized void removeZConnection(final ZConnection zConnection) {
+	public void removeZConnection(final ZConnection zConnection) {
 		LOG.warn("开始删除一个连接ZConnection={}", zConnection);
 
 		final Optional<ZConnection> findAnyWRITE = this.writeVector.stream()
@@ -206,7 +206,7 @@ public class ZCPool {
 	 * @return
 	 *
 	 */
-	public synchronized ImmutableList<ZConnection> getAll() {
+	public ImmutableList<ZConnection> getAll() {
 		final List<ZConnection> r = Lists.newArrayList(this.writeVector);
 		r.addAll(this.readVector);
 		final ImmutableList<ZConnection> list = ImmutableList.copyOf(r);
@@ -248,7 +248,7 @@ public class ZCPool {
 		}
 	}
 
-	public synchronized void newWriteConnection(final ZDatasourceProperties.P p) {
+	private synchronized void newWriteConnection(final ZDatasourceProperties.P p) {
 		final String url = p.getDatasourceUrl();
 		 // FIXME 2023年6月16日 下午12:35:04 zhanghen:先暂时处理为从1到max
 		 final int minConnection = 1;
