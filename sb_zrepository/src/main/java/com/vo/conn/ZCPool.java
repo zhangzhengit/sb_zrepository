@@ -31,6 +31,9 @@ public class ZCPool {
 	private final AtomicInteger writeI = new AtomicInteger();
 	private final AtomicInteger readI = new AtomicInteger();
 
+	private static final ZCPool POOL = new ZCPool();
+
+
 	private ZCPool() {
 		System.out.println(
 				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "ZCPool.ZCPool()");
@@ -39,9 +42,15 @@ public class ZCPool {
 
 		final ZCPoolJob job = new ZCPoolJob();
 		job.start();
+
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			LOG.info("JVM钩子执行，开始关闭连接池");
+			this.shutdown();
+			LOG.info("JVM钩子已成功关闭连接池");
+		}));
+
 	}
 
-	private static final ZCPool POOL = new ZCPool();
 
 	public static ZCPool getInstance() {
 		return POOL;
@@ -265,17 +274,25 @@ public class ZCPool {
 		}
 	}
 
-	public synchronized void shutdown() {
-		LOG.info("开始关闭连接池,当前连接数量={}", this.writeVector.size());
-		for (final ZConnection zConnection : this.writeVector) {
+	private synchronized void shutdown() {
+		LOG.info("开始关闭连接池,当前连接数量={}", this.writeVector.size() + this.readVector.size());
+		ZCPool.close(this.writeVector);
+		ZCPool.close(this.readVector);
+		LOG.info("成功关闭连接池");
+	}
+
+	private static void close(final Vector<ZConnection> writeVector2) {
+		for (final ZConnection zConnection : writeVector2) {
 			final Connection c = zConnection.getConnection();
 			try {
-				c.close();
+				final boolean closed = c.isClosed();
+				if (!closed) {
+					c.close();
+				}
 			} catch (final SQLException e) {
 				e.printStackTrace();
 			}
 		}
-		LOG.info("成功关闭连接池");
 	}
 
 }
