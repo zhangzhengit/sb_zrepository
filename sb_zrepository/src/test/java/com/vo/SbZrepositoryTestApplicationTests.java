@@ -42,7 +42,7 @@ class SbZrepositoryTestApplicationTests {
 	@Autowired
 	NumberZRepository nnnnnnnnn;
 
-	final ZE ze = ZES.newZE(Runtime.getRuntime().availableProcessors() * 10);
+	final ZE ze = ZES.newZE(Runtime.getRuntime().availableProcessors() * 10, "ZR-TEST-THREAD-");
 
 	@Test
 	void NN_MMM2() {

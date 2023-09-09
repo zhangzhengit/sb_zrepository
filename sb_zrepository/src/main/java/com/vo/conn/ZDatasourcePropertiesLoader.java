@@ -107,8 +107,9 @@ public class ZDatasourcePropertiesLoader {
 
 		final String password = gs().getString("datasource.read.password[" + i + "]");
 		if (StrUtil.isEmpty(password)) {
-			LOG.error("datasource.read.password[" + i + "]不存在");
-			System.exit(0);
+			// 允许password为空
+//			LOG.error("datasource.read.password[" + i + "]不存在");
+//			System.exit(0);
 		}
 		read.setDatasourcePassword(password);
 
@@ -168,8 +169,9 @@ public class ZDatasourcePropertiesLoader {
 
 		final String password = gs().getString("datasource.write.password");
 		if (StrUtil.isEmpty(password)) {
-			LOG.error("datasource.write.password 不存在");
-			System.exit(0);
+			// 允许password为空
+//			LOG.error("datasource.write.password 不存在");
+//			System.exit(0);
 		}
 		write.setDatasourcePassword(password);
 
