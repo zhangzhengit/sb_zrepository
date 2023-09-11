@@ -17,6 +17,10 @@ import com.vo.core.Page;
  *
  */
 public interface ZRepository<T, ID> {
+	// FIXME 2023年9月11日 下午8:35:46 zhanghen: TODO
+	//	1、子接口中自定义方法的返回值，可以自定义返回类型中的T，做到隐藏敏感字段和去除非必要的select 字段
+	//  2、select * 也改为 select 具体字段，自定义类型T使用getDeclaredFields来获取字段来生成具体的字段
+
 
 	// FIXME 2023年9月6日 下午7:40:07 zhanghen: TODO 分页
 
