@@ -440,12 +440,12 @@ public class ZRepositoryMain {
 
 		final List<String> fnLIst = getDeclaredFieldName(typeClass);
 
-		System.out.println("methodName = " + methodName);
+//		System.out.println("methodName = " + methodName);
 		final List<String> alList = splitMethodNameToArray(methodName);
-		System.out.println("fnLIst = \n");
+//		System.out.println("fnLIst = \n");
 		System.out.println(fnLIst);
-		System.out.println("alList = \n");
-		System.out.println(alList);
+//		System.out.println("alList = \n");
+//		System.out.println(alList);
 
 		// findByUserId 分成[find, By, User, Id] ，从前往后计算是否sql关键字，否则按照entity字段处理
 
@@ -458,16 +458,16 @@ public class ZRepositoryMain {
 		String mn2 = methodName;
 		for (final String sk : skList) {
 			mn2 = mn2.replace(sk, "-");
-			System.out.println("sk = " + sk);
-			System.out.println("mn2 = " + mn2);
+//			System.out.println("sk = " + sk);
+//			System.out.println("mn2 = " + mn2);
 		}
 
-		System.out.println("alList-removeAll-sqlKeyword = \n");
-		System.out.println(alList);
+//		System.out.println("alList-removeAll-sqlKeyword = \n");
+//		System.out.println(alList);
 
-		System.out.println("mn2 = " + mn2);
+//		System.out.println("mn2 = " + mn2);
 		final String[] fieldNameArray = mn2.split("-");
-		System.out.println("fieldNameArray = " + Arrays.toString(fieldNameArray));
+//		System.out.println("fieldNameArray = " + Arrays.toString(fieldNameArray));
 		final List<String> fieldNameList = Lists.newArrayList(fieldNameArray).stream().filter(x -> StrUtil.isNotBlank(x)).collect(Collectors.toList());
 
 		for (final String fn : fieldNameList) {
@@ -481,14 +481,14 @@ public class ZRepositoryMain {
 			}
 		}
 
-		System.out.println("fieldNameList = " + fieldNameList);
+//		System.out.println("fieldNameList = " + fieldNameList);
 		String sqlA = sql;
 		for (final String fieldName : fieldNameList) {
 			final String dbColumnName = ZFieldConverter.toDbField(fieldName);
 			sqlA = sqlA.replaceFirst("@", dbColumnName);
 		}
-		System.out.println("sql = " + sql);
-		System.out.println("sqlA = " + sqlA);
+//		System.out.println("sql = " + sql);
+//		System.out.println("sqlA = " + sqlA);
 
 		// 仍然包含 @
 		if (sqlA.contains("@")) {
