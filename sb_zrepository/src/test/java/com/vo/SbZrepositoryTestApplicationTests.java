@@ -893,9 +893,22 @@ class SbZrepositoryTestApplicationTests {
 
 		final List<Integer> saveAll = this.nnnnnnnnn.saveAll(sl);
 		System.out.println("saveAll = " + saveAll);
+
+		final AtomicInteger w = new
+				AtomicInteger();
+
 		for (final Integer id : saveAll) {
-			final NumberEntity e = this.nnnnnnnnn.findById(id);
-			assertThat(e.getId().equals(id));
+			this.ze.executeInQueue(() -> {
+				final NumberEntity e = this.nnnnnnnnn.findById(id);
+				assertThat(e.getId().equals(id));
+
+				w.incrementAndGet();
+			});
+
+		}
+
+		while (w.get() < n) {
+
 		}
 
 		final List<NumberEntity> fl = this.nnnnnnnnn.findByIdIn(saveAll);
