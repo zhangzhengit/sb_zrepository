@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -44,6 +45,7 @@ import cn.hutool.core.date.DateUtil;
  * @date 2023年6月16日
  *
  */
+// FIXME 2023年9月16日 下午7:57:12 zhanghen: 考虑清楚每个方法 @ZID 字段为空怎么处理
 public class SU {
 
 	private static final String LIMIT = "limit";
@@ -94,7 +96,6 @@ public class SU {
 			}
 			final String x = builder.replace(builder.length()-5, builder.length(), "").toString();
 			final String sqlFinalX = sql.replace("COLUMN", x);
-			System.out.println("FsqlFinal = " + sqlFinalX);
 
 			return page0(mode, cls, size, page, zc, sqlFinalX, false);
 
@@ -133,7 +134,6 @@ public class SU {
 		final List<T> rL = Lists.newArrayList();
 		while (rs.next()) {
 			final T tR = newT(cls, rs, metaData, count);
-//					System.out.println("pagetR = " + tR);
 			rL.add(tR);
 		}
 
@@ -191,8 +191,9 @@ public class SU {
 			try {
 				final Object fV = field.get(t);
 
+				final String dbName = ZFieldConverter.toDbField(field.getName());
+				column.append(dbName).append('=');
 				if (fV != null) {
-					column.append(field.getName()).append('=');
 					if (fV instanceof String) {
 						column.append("'").append(fV).append("'");
 					} else if (fV instanceof Date) {
@@ -202,8 +203,10 @@ public class SU {
 					} else {
 						column.append(fV);
 					}
-					column.append(',');
+				} else {
+					column.append(" null");
 				}
+				column.append(',');
 
 			} catch (IllegalArgumentException | IllegalAccessException e) {
 				e.printStackTrace();
@@ -225,11 +228,15 @@ public class SU {
 		final Field idField = zidO.get();
 
 		idField.setAccessible(true);
-		Object idV = null;
+		Object idValue = null;
 		try {
-			idV = idField.get(t);
+			idValue = idField.get(t);
 		} catch (IllegalArgumentException | IllegalAccessException e1) {
 			e1.printStackTrace();
+		}
+
+		if (Objects.isNull(idValue)) {
+			throw new IllegalArgumentException("update方法参数 t 的 " + ZID.class.getSimpleName() + " 字段不能为空！t = " + t);
 		}
 
 		final String sqlFinal = sql.replace("COLUMN", column.replace(column.length()-1, column.length(), ""));
@@ -244,14 +251,13 @@ public class SU {
 		PreparedStatement ps  = null;
 		try {
 			ps = zc.getConnection().prepareStatement(sqlFinal);
-			ps.setObject(1, idV);
+			ps.setObject(1, idValue);
 
 			if (ZDP.getShowSql()) {
-				LOG.info("[{}],[{}]", sqlFinal, idV);
+				LOG.info("[{}],[{}]", sqlFinal, idValue);
 			}
 
 			final int executeUpdate = ps.executeUpdate();
-			System.out.println("executeUpdate = " + executeUpdate);
 
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -261,15 +267,10 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-			try {
-				zc.getConnection().commit();
-			} catch (final SQLException e1) {
-				e1.printStackTrace();
-			}
 			ZCPool.getInstance().returnZConnectionAndCommit(zc);
 			close(ps);
 		}
-
+		// XXX 直接返回T可以吗？
 		return t;
 	}
 
@@ -305,11 +306,6 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
 			INSTANCE.returnZConnectionAndCommit(zc);
 			close(ps);
 		}
@@ -318,8 +314,6 @@ public class SU {
 	}
 
 	public static <T> boolean deleteByIdIn(final Mode mode, final List<Object> idList, final Class<T> cls, final String sql) {
-		System.out.println(
-				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "SU.deleteByIdIn()");
 
 		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
@@ -417,6 +411,10 @@ public class SU {
 
 	public static <T> boolean existById(final Mode mode, final Object id, final Class<T> cls, final String sql) {
 
+		if (Objects.isNull(id)) {
+			return false;
+		}
+
 		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
 
@@ -451,11 +449,6 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
 			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
@@ -463,10 +456,7 @@ public class SU {
 		return false;
 	}
 
-
 	public static  <T> List<Object> saveAll(final Mode mode, final Class<T> cls, final String sqlParam, final List<T> tList) {
-		System.out.println(
-				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "SU.saveAll()");
 
 		if (CollUtil.isEmpty(tList)) {
 			return Collections.emptyList();
@@ -498,6 +488,9 @@ public class SU {
 					final ArrayList<Object> p1 = Lists.newArrayList();
 					int i = 1;
 					for (final Field field : cls.getDeclaredFields()) {
+						if (field.isAnnotationPresent(ZID.class)) {
+							continue;
+						}
 						field.setAccessible(true);
 						final Object value = field.get(t);
 						ps.setObject(i, value);
@@ -513,6 +506,9 @@ public class SU {
 				for (final T t : tList) {
 					int i = 1;
 					for (final Field field : cls.getDeclaredFields()) {
+						if (field.isAnnotationPresent(ZID.class)) {
+							continue;
+						}
 						field.setAccessible(true);
 						final Object value = field.get(t);
 						ps.setObject(i, value);
@@ -568,11 +564,6 @@ public class SU {
 
 		} finally {
 			INSTANCE.returnZConnectionAndCommit(zc);
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
 			close(rs, ps);
 		}
 
@@ -583,6 +574,10 @@ public class SU {
 		final StringJoiner arg = new StringJoiner(",");
 		final StringJoiner v = new StringJoiner(",");
 		for (final Field field : cls.getDeclaredFields()) {
+			if (field.isAnnotationPresent(ZID.class)) {
+				continue;
+			}
+
 			final String dbFieldname = ZFieldConverter.toDbField(field.getName());
 			arg.add(dbFieldname);
 			v.add("?");
@@ -602,98 +597,25 @@ public class SU {
 			e1.printStackTrace();
 		}
 
-		Statement statement = null;
+		final String sqlFinal = gSaveSql(cls, t, sql);
+		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
-
-			final Field[] fs = t.getClass().getDeclaredFields();
-
-			final Optional<Field> zidO = Lists.newArrayList(fs).stream().filter(f -> f.isAnnotationPresent(ZID.class))
-					.findAny();
-			if (!zidO.isPresent()) {
-				throw new IllegalArgumentException(
-						ZEntity.class.getSimpleName() + " 类必须有 " + ZID.class.getSimpleName() + " 字段");
-			}
-			final Field idField = zidO.get();
-			idField.setAccessible(true);
-			final Object idValue = idField.get(t);
-
-			final ZEntity zEntity = t.getClass().getAnnotation(ZEntity.class);
-
-
-			final String selectById = "select * from " + zEntity.tableName() + " where id = ?";
-			// update
-			if (idValue != null) {
-				// select
-
-				final T findById = findById(mode, idValue, cls, selectById, zc);
-				if (findById != null) {
-//				update user set online_status = 1,show_online_status = 1 where id = 1;
-					final String idDBColumn = ZFieldConverter.toDbField(idField.getName());
-					final String where = " where " + idDBColumn + " = " + idValue;
-
-					final String update = " update " + zEntity.tableName() + " set ";
-
-					final StringBuilder ub = new StringBuilder();
-					for (int i = 0; i < fs.length; i++) {
-						final Field field = fs[i];
-						final String dbFieldname = ZFieldConverter.toDbField(field.getName());
-
-						field.setAccessible(true);
-						final Object fV = field.get(t);
-						if (fV == null) {
-							continue;
-						}
-
-						ub.append(dbFieldname).append(" = ");
-						if (fV instanceof String) {
-							ub.append("'").append(fV).append("'");
-						} else if (fV instanceof Date) {
-							// FIXME 2023年8月1日 下午8:50:26 zhanghen: TODO 日期时间的字段，新增注解：表示插入的格式
-							final String vD = DateUtil.format((Date) fV, DatePattern.NORM_DATETIME_FORMAT);
-							ub.append("'").append(vD).append("'");
-						} else {
-							ub.append(fV);
-//						ub.append("'").append(fV).append("'");
-						}
-
-						ub.append(",");
-					}
-
-					final String updateSQL = update + ub.replace(ub.length() - 1, ub.length(), "") + where;
-					System.out.println("updateSQL = " + updateSQL);
-
-					final PreparedStatement prepareStatement = connection.prepareStatement(updateSQL);
-					prepareStatement.execute();
-					prepareStatement.close();
-//					return idValue;
-
-					// 2 返回T
-					final T findByIdNew = findById(mode, idValue, cls, selectById, zc);
-					return findByIdNew;
-				}
-			}
-
-			// save
-			final String sql2 = gSaveSql(cls, t, sql);
-			final String s = sql2;
-			statement = connection.createStatement();
-
-			final boolean execute = statement.execute(s, Statement.RETURN_GENERATED_KEYS);
-
-//			final int executeUpdate = statement.executeUpdate(s, Statement.RETURN_GENERATED_KEYS);
+			ps = connection.prepareStatement(sqlFinal);
+			final boolean execute = ps.execute(sqlFinal, Statement.RETURN_GENERATED_KEYS);
 			if (ZDP.getShowSql()) {
-				LOG.info("[{}],[{}]", sql2, t);
+				LOG.info("[{}],[{}]", sqlFinal, t);
 			}
-
-			rs = statement.getGeneratedKeys();
+			rs = ps.getGeneratedKeys();
 			if (rs.next()) {
 				final Object id = rs.getObject(1);
-//				return id;
+				final ZEntity zEntity = t.getClass().getAnnotation(ZEntity.class);
+				final String selectById = "select * from " + zEntity.tableName() + " where id = ?";
 				final T findByIdNew = findById(mode, id, cls, selectById, zc);
 				return findByIdNew;
 			}
-		} catch (final Exception e) {
+
+		} catch (final SQLException e) {
 			e.printStackTrace();
 			try {
 				connection.rollback();
@@ -701,17 +623,11 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
+			close(ps);
 			INSTANCE.returnZConnectionAndCommit(zc);
-			close(rs, statement);
 		}
 
 		return null;
-
 	}
 
 	private static ZConnection getZCAndSetAutoCommitFALSE(final Mode mode) {
@@ -742,6 +658,9 @@ public class SU {
 		final StringJoiner arg = new StringJoiner(",");
 		final StringJoiner v = new StringJoiner(",");
 		for (final Field field : fs) {
+			if (field.isAnnotationPresent(ZID.class)) {
+				continue;
+			}
 
 			final String dbFieldname = ZFieldConverter.toDbField(field.getName());
 			arg.add(dbFieldname);
@@ -769,8 +688,6 @@ public class SU {
 	}
 
 	public static <T> List<T> findAll(final Mode mode, final Class<T> cls, final String sql) {
-		System.out.println(
-				java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t" + "SU.findAll()");
 
 		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
 		final Connection connection = zc.getConnection();
@@ -822,12 +739,6 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
-
 			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
@@ -882,12 +793,6 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
 			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
@@ -1106,7 +1011,6 @@ public class SU {
 					}
 					final String string = Arrays.toString(a1);
 					final String sss = joiner.toString().replace("[", "").replace("]", "");
-//					System.out.println("object instanceof List - sss = " + sss);
 					// ? 是 sql目标中的参数值占位符
 					s = s.replaceFirst("\\?", sss);
 				}

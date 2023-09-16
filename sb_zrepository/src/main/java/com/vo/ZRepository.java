@@ -35,32 +35,77 @@ public interface ZRepository<T, ID> {
 	 */
 	Page<T> page(T t, Integer page, Integer size);
 
-	Long count();
-
-	T findById(ID id);
-
-	T update(T t);
-
 	/**
-	 * save方法会先判断对象是否存在，如果存在，则更新参数t中不为null的值到数据库; 如果不存在，则直接save参数t对象
+	 * select count(*) from 表
 	 *
-	 * @param t
 	 * @return
 	 *
 	 */
-	// FIXME 2023年6月16日 下午2:55:15 zhanghen: 先判断t是否存在
+	Long count();
+
+	/**
+	 * 根据 @ZID 字段查询一个对象
+	 *
+	 * @param id
+	 * @return
+	 *
+	 */
+	T findById(ID id);
+
+	/**
+	 * 根据 @ZID 字段值来update一个对象，字段是什么就update为什么包括null， @ZID 字段不能为空，否则抛异常
+	 *
+	 * @param t
+	 * @return 返回update后的对象
+	 *
+	 */
+	T update(T t);
+
+	/**
+	 * insert一个对象，忽略 @ZID 字段，其他字段值什么是insert为什么，包括null
+	 *
+	 * @param t
+	 * @return 返回新插入的对象
+	 *
+	 */
 	T save(T t);
 
+	/**
+	 * 批量insert，忽略 @ZID 字段，其他字段值什么是insert为什么，包括null
+	 *
+	 * @param tList
+	 * @return 返回插入对象的ID
+	 *
+	 */
 	List<ID> saveAll(List<T> tList);
 
+	/**
+	 * 根据 @ZID 字段批量查询
+	 *
+	 * @param idList
+	 * @return
+	 *
+	 */
 	List<T> findByIdIn(List<ID> idList);
 
+	/**
+	 * 查询出所有的内容，不带条件
+	 *
+	 * @return
+	 */
 	List<T> findAll();
 
+	/**
+	 * 根据 @ZID 字段判断对象是否存在
+	 *
+	 * @param id
+	 * @return
+	 *
+	 */
 	boolean existById(ID id);
 
 	/**
-	 * 根据ID删除一个对象
+	 * 根据 @ZID 字段删除一个对象
 	 *
 	 * @param id
 	 * @return 是否成功删除了
@@ -68,6 +113,13 @@ public interface ZRepository<T, ID> {
 	 */
 	boolean deleteById(ID id);
 
+	/**
+	 * 根据 @ZID 字段批量删除对象
+	 *
+	 * @param idList
+	 * @return
+	 *
+	 */
 	boolean deleteByIdIn(List<ID> idList);
 
 	/**

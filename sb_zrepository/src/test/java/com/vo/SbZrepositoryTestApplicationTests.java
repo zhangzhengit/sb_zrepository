@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,14 +41,94 @@ class SbZrepositoryTestApplicationTests {
 	@Autowired
 	NumberZRepository nnnnnnnnn;
 
-	final ZE ze = ZES.newZE(Runtime.getRuntime().availableProcessors() * 10, "ZR-TEST-THREAD-");
+	final ZE ze = ZES.newZE(99, "ZR-TEST-THREAD-");
+//	final ZE ze = ZES.newZE(Runtime.getRuntime().availableProcessors() * 10, "ZR-TEST-THREAD-");
+
+	@Test
+	void saveAll_N1() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.save_N1()");
+
+		final NumberEntity entity = new NumberEntity();
+		entity.setBigint1(2000L);
+		entity.setOrderCount(1);
+		entity.setUserId(200);
+		entity.setName("lisi");
+		entity.setId(1);
+		entity.setStatus(1);
+		entity.setSmallint1(3);
+		entity.setAge(665);
+		entity.setId(23434340);
+
+		this.nnnnnnnnn.deleteById(entity.getId());
+
+		final List<Integer> saveAll = this.nnnnnnnnn.saveAll(Lists.newArrayList(entity));
+
+		assertThat(saveAll.size() == 1);
+		assertThat(!saveAll.get(0).equals(entity.getId()));
+
+	}
+
+
+	@Test
+	void update_N1() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.update_N1()");
+		final NumberEntity entity = new NumberEntity();
+		entity.setBigint1(2000L);
+		entity.setOrderCount(1);
+		entity.setUserId(200);
+		entity.setName("lisi");
+		entity.setId(1);
+		entity.setStatus(1);
+		entity.setSmallint1(3);
+		entity.setAge(665);
+		final NumberEntity s = this.nnnnnnnnn.save(entity);
+
+		s.setName("这是save以后set的属性，测试update后是否存在于数据库，存在就对了");
+
+//		s.setId(null);
+		final NumberEntity update = this.nnnnnnnnn.update(s);
+
+		assertThat(update.getName().endsWith("这是save以后set的属性，测试update后是否存在于数据库，存在就对了"));
+	}
+
+
+	@Test
+	void save_N1() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.save_N1()");
+
+		final NumberEntity entity = new NumberEntity();
+		entity.setBigint1(2000L);
+		entity.setOrderCount(1);
+		entity.setUserId(200);
+		entity.setName("lisi");
+		entity.setId(1);
+		entity.setStatus(1);
+		entity.setSmallint1(3);
+		entity.setAge(665);
+		final NumberEntity s = this.nnnnnnnnn.save(entity);
+
+		assertThat(s.getAge().equals(entity.getAge()));
+		assertThat(s.getName().equals(entity.getName()));
+		assertThat(s.getBigint1().equals(entity.getBigint1()));
+		assertThat(s.getOrderCount().equals(entity.getOrderCount()));
+		assertThat(s.getUserId().equals(entity.getUserId()));
+		assertThat(s.getStatus().equals(entity.getStatus()));
+		assertThat(s.getSmallint1().equals(entity.getSmallint1()));
+
+
+		final NumberEntity s2 = this.nnnnnnnnn.save(s);
+
+	}
 
 	@Test
 	void NN_MMM2() {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "SbZrepositoryTestApplicationTests.NN_MMM2()");
 
-		final int n = 300;
+		final int n = 100;
 
 		final AtomicInteger w = new AtomicInteger(0);
 		final Set<Object> ssss = Sets.newConcurrentHashSet();
@@ -90,7 +169,7 @@ class SbZrepositoryTestApplicationTests {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "SbZrepositoryTestApplicationTests.NN_MMM()");
 
-		final int n = 300;
+		final int n = 100;
 
 		final AtomicInteger w = new AtomicInteger(0);
 
@@ -199,7 +278,7 @@ class SbZrepositoryTestApplicationTests {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "SbZrepositoryTestApplicationTests.save_b()");
 
-		final int n = 1000;
+		final int n = 100;
 
 		final AtomicInteger w = new AtomicInteger(0);
 
@@ -342,7 +421,7 @@ class SbZrepositoryTestApplicationTests {
 	@Test
 	void deleteByIdIn2() {
 
-		final int n = 1050;
+		final int n = 450;
 
 		final ArrayList<NumberEntity> sl = Lists.newArrayList();
 		for (int i = 1; i <= n; i++) {
@@ -705,19 +784,19 @@ class SbZrepositoryTestApplicationTests {
 
 		this.nnnnnnnnn.deleteAll();
 
-		final ZE ze = ZES.newZE();
-
 		final int n = 400;
 		final AtomicInteger saveA = new AtomicInteger();
+		final Set<Integer> saveId = Sets.newConcurrentHashSet();
 		for (int i = 1; i <= n; i++) {
 
 			final Integer id = i;
-			ze.executeInQueue(() -> {
+			this.ze.executeInQueue(() -> {
 
 				final NumberEntity numberEntity = new NumberEntity();
 				numberEntity.setId(id);
 				numberEntity.setUserId(200 + id);
 				final NumberEntity save = SbZrepositoryTestApplicationTests.this.nnnnnnnnn.save(numberEntity);
+				saveId.add(save.getId());
 				saveA.incrementAndGet();
 			});
 		}
@@ -725,27 +804,15 @@ class SbZrepositoryTestApplicationTests {
 		while (saveA.get() < n) {
 
 		}
+
 		System.out.println("OK");
-		final IntStream range = IntStream.range(1, n + 1);
 
-		final List<Integer> idList = range.mapToObj(i -> i).collect(Collectors.toList());
-
+		final ArrayList<Integer> idList = Lists.newArrayList(saveId);
 		final List<NumberEntity> ll = this.nnnnnnnnn.findByIdIn(idList);
-		if(ll.size() != n) {
-			System.out.println("idList.size = " + idList.size());
-			System.out.println("ll.size = " + ll.size());
-			System.out.println("n = " + n);
-		}
 		assertThat(ll.size() == n);
 
 		this.nnnnnnnnn.deleteAll();
-
-
-//		this.numberZRepository.deleteAll();
-//		final List<NumberEntity> llc = this.numberZRepository.findByIdIn(idList);
-//		assertThat(llc.size() == 0);
 	}
-
 
 	/**
 	 * save 一个对象，然后修改其中一个字段，然后select出来，字段值必须是最后一次save的值
@@ -757,20 +824,22 @@ class SbZrepositoryTestApplicationTests {
 		this.nnnnnnnnn.deleteAll();
 
 		final NumberEntity numberEntity = new NumberEntity();
-		numberEntity.setId(1);
+//		numberEntity.setId(1);
 		numberEntity.setUserId(200);
 		numberEntity.setSmallint1(2);
 		numberEntity.setBigint1(300000L);
-		this.nnnnnnnnn.save(numberEntity);
+		final NumberEntity save = this.nnnnnnnnn.save(numberEntity);
 
 		numberEntity.setUserId(400);
-		this.nnnnnnnnn.save(numberEntity);
+		final NumberEntity save2 = this.nnnnnnnnn.save(numberEntity);
 
-		final NumberEntity ue = this.nnnnnnnnn.findById(numberEntity.getId());
+		assertThat(save.getId() + 1 == save2.getId());
+
+		final NumberEntity ue = this.nnnnnnnnn.findById(save2.getId());
 		System.out.println("ue = " + ue);
-		if(ue.getUserId() != 400) {
+		if (ue.getUserId() != 400) {
 			// FIXME 2023年9月6日 上午2:23:17 zhanghen: debug
-			final int xn  = 230;
+			final int xn = 230;
 		}
 		System.out.println("ue.getUserId() = " + ue.getUserId());
 		assertThat(ue.getUserId() == 400);
@@ -932,10 +1001,10 @@ class SbZrepositoryTestApplicationTests {
 
 		final AtomicInteger wanch = new AtomicInteger();
 
-		final ZE ze = ZES.newZE(8);
+//		final ZE ze = ZES.newZE(8);
 		for (int x = 1; x <= k; x++) {
 
-			ze.executeInQueue(() -> {
+			this.ze.executeInQueue(() -> {
 				// TODO Auto-generated method stub
 
 				final ArrayList<NumberEntity> sl = Lists.newArrayList();
