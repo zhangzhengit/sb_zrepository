@@ -23,6 +23,7 @@ import com.votool.ze.ZE;
 import com.votool.ze.ZES;
 import com.votool.ze.ZETaskResult;
 
+import cn.hutool.core.collection.ConcurrentHashSet;
 import cn.hutool.core.lang.UUID;
 
 /**
@@ -41,8 +42,108 @@ class SbZrepositoryTestApplicationTests {
 	@Autowired
 	NumberZRepository nnnnnnnnn;
 
-	final ZE ze = ZES.newZE(99, "ZR-TEST-THREAD-");
+	final ZE ze = ZES.newZE(9, "ZR-TEST-THREAD-");
 //	final ZE ze = ZES.newZE(Runtime.getRuntime().availableProcessors() * 10, "ZR-TEST-THREAD-");
+
+	@Test
+	void update_N3() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.update_N3()");
+
+		final int k = 1;
+
+		final int n = 222;
+
+		final Set<Integer> idSet = new ConcurrentHashSet<>();
+		final AtomicInteger w = new AtomicInteger();
+
+		for (int x = 1; x <= k; x++) {
+			this.ze.executeInQueue(() -> {
+
+				final ArrayList<NumberEntity> sl = Lists.newArrayList();
+				for (int i = 1; i <= n; i++) {
+					final NumberEntity entity = new NumberEntity();
+					entity.setAge(i);
+					sl.add(entity);
+				}
+				final List<Integer> saveAll = this.nnnnnnnnn.saveAll(sl);
+				idSet.addAll(saveAll);
+
+				w.incrementAndGet();
+			});
+		}
+		while(w.get() < k) {
+
+		}
+		System.out.println("k * n = " + (k * n));
+		System.out.println("idSets.size = " + idSet.size());
+		assertThat(idSet.size() == k * n);
+		System.out.println("udpate 开始");
+
+
+		final AtomicInteger u = new AtomicInteger();
+
+		for (final Integer id : idSet) {
+			this.ze.executeInQueue(() -> {
+
+				final NumberEntity f = this.nnnnnnnnn.findById(id);
+				final String name = UUID.randomUUID().toString();
+				f.setName(name);
+
+				final NumberEntity update = this.nnnnnnnnn.update(f);
+				final NumberEntity f2 = this.nnnnnnnnn.findById(update.getId());
+				assertThat(name.equals(f2.getName()));
+
+				u.incrementAndGet();
+			});
+		}
+
+		while (u.get() < idSet.size()) {
+
+		}
+	}
+
+	@Test
+	void update_N2() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.update_N2()");
+
+		final int n = 1000;
+
+		final ArrayList<NumberEntity> sl = Lists.newArrayList();
+		for (int i = 1; i <= n; i++) {
+			final NumberEntity entity = new NumberEntity();
+			entity.setAge(i);
+			sl.add(entity);
+		}
+
+		final List<Integer> saveAll = this.nnnnnnnnn.saveAll(sl);
+		assertThat(saveAll.size() == n);
+
+		final List<NumberEntity> findByIdIn = this.nnnnnnnnn.findByIdIn(saveAll);
+		assertThat(findByIdIn.size() == n);
+
+		final AtomicInteger w = new AtomicInteger();
+		for (final NumberEntity numberEntity : findByIdIn) {
+
+			this.ze.executeInQueue(() -> {
+
+				numberEntity.setName("UUU" + numberEntity.getId());
+				final NumberEntity update = this.nnnnnnnnn.update(numberEntity);
+				final NumberEntity f = this.nnnnnnnnn.findById(numberEntity.getId());
+				assertThat(("UUU" + numberEntity.getId()).equals(f.getName()));
+				assertThat(f.getId().equals(numberEntity.getId()));
+
+				w.incrementAndGet();
+			});
+		}
+
+		while (w.get() < n) {
+
+		}
+		System.out.println("OK");
+
+	}
 
 	@Test
 	void saveAll_N1() {
@@ -1020,7 +1121,7 @@ class SbZrepositoryTestApplicationTests {
 			});
 		}
 
-		while(wanch.get() < k) {
+		while (wanch.get() < k) {
 
 		}
 //		this.nnnnnnnnn.deleteAll();

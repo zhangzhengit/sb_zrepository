@@ -85,6 +85,7 @@ public class ZCPool {
 	 *
 	 */
 	public ZConnection getZConnection(final Mode mode) {
+
 		if (mode == Mode.WRITE) {
 
 			return this.getWRITE();
@@ -158,6 +159,7 @@ public class ZCPool {
 	 *
 	 */
 	public void returnZConnectionAndCommit(final ZConnection zConnection) {
+
 		for (final ZConnection zc : this.writeVector) {
 			if (zc.getConnection() == zConnection.getConnection()) {
 				try {
