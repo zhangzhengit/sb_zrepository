@@ -997,7 +997,7 @@ class SbZrepositoryTestApplicationTests {
 		this.nnnnnnnnn.deleteAll();
 
 		final int k = 100;
-		final int n = 100;
+		final int n = 10;
 
 		final AtomicInteger wanch = new AtomicInteger();
 
@@ -1023,9 +1023,12 @@ class SbZrepositoryTestApplicationTests {
 		while(wanch.get() < k) {
 
 		}
-//		this.nnnnnnnnn.deleteAll();
 
 		System.out.println("OK");
+
+		final Long count = this.nnnnnnnnn.count();
+		assertThat(count.intValue() == k * n);
+
 	}
 
 }

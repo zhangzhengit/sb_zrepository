@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,7 +11,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.vo.conn.ZDatasourceProperties.P;
 import com.vo.core.ZLog2;
-import com.vo.read.R;
 
 /**
  *
@@ -33,6 +31,8 @@ public class ZCPool {
 
 	private static final ZCPool POOL = new ZCPool();
 
+	private final Object readLock = new Object();
+	private final Object writeLock = new Object();
 
 	private ZCPool() {
 		System.out.println(
@@ -103,52 +103,48 @@ public class ZCPool {
 	private ZConnection getREAD() {
 
 		final int ms = 1000 * 10;
-		for (int i = 1; i <= ms; i++) {
-			final Optional<ZConnection> findFirst = this.readVector.stream().filter(zc -> !zc.getBusy()).findFirst();
-			if (findFirst.isPresent()) {
-				final ZConnection zc = findFirst.get();
-				zc.setBusy(true);
-				return zc;
-			}
+		synchronized (this.readLock) {
 
-			this.sleep1MS();
+			for (int i = 1; i <= ms; i++) {
+				final Optional<ZConnection> findFirst = this.readVector.stream().filter(zc -> !zc.getBusy()).findFirst();
+				if (findFirst.isPresent()) {
+					final ZConnection zc = findFirst.get();
+					zc.setBusy(true);
+					return zc;
+				}
+
+				try {
+					this.readLock.wait(1);
+				} catch (final InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 		throw new IllegalArgumentException("获取不到空闲的[读]连接");
-
-//		final Random random = new Random();
-//		final ZConnection zConnection = this.readVector.get(random.nextInt(this.readVector.size()));
-//		zConnection.setBusy(true);
-//		return zConnection;
 	}
 
 	private ZConnection getWRITE() {
 		// FIXME 2023年9月6日 上午2:36:59 zhanghen: ms 配置为参数
 		final int ms = 1000 * 10;
-		for (int i = 1; i <= ms; i++) {
-			final Optional<ZConnection> findFirst = this.writeVector.stream().filter(zc -> !zc.getBusy()).findFirst();
-			if (findFirst.isPresent()) {
-				final ZConnection zc = findFirst.get();
-				zc.setBusy(true);
-				return zc;
-			}
+		synchronized (this.writeLock) {
 
-			this.sleep1MS();
+			for (int i = 1; i <= ms; i++) {
+				final Optional<ZConnection> findFirst = this.writeVector.stream().filter(zc -> !zc.getBusy())
+						.findFirst();
+				if (findFirst.isPresent()) {
+					final ZConnection zc = findFirst.get();
+					zc.setBusy(true);
+					return zc;
+				}
+				try {
+					this.writeLock.wait(1);
+				} catch (final InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 
 		throw new IllegalArgumentException("获取不到空闲的[写]连接");
-
-//		final Random random = new Random();
-//		final ZConnection zConnection = this.writeVector.get(random.nextInt(this.writeVector.size()));
-//		zConnection.setBusy(true);
-//		return zConnection;
-	}
-
-	private void sleep1MS() {
-		try {
-			Thread.sleep(1);
-		} catch (final InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -158,29 +154,56 @@ public class ZCPool {
 	 *
 	 */
 	public void returnZConnectionAndCommit(final ZConnection zConnection) {
-		for (final ZConnection zc : this.writeVector) {
-			if (zc.getConnection() == zConnection.getConnection()) {
-				try {
-					zConnection.getConnection().commit();
-				} catch (final SQLException e) {
-					e.printStackTrace();
-				}
-				zc.setBusy(false);
 
-				break;
-			}
+		final Mode mode = zConnection.getMode();
+		switch (mode) {
+		case WRITE:
+			this.returnWrite(zConnection);
+			break;
+
+		case READ:
+			this.returnRead(zConnection);
+			break;
+
+		default:
+			break;
 		}
 
-		for (final ZConnection zc : this.readVector) {
-			if (zc.getConnection() == zConnection.getConnection()) {
-				try {
-					zConnection.getConnection().commit();
-				} catch (final SQLException e) {
-					e.printStackTrace();
-				}
-				zc.setBusy(false);
+	}
 
-				break;
+	private void returnRead(final ZConnection zConnection) {
+		synchronized (this.readLock) {
+
+			for (final ZConnection zc : this.readVector) {
+				if (zc.getConnection() == zConnection.getConnection()) {
+					try {
+						zConnection.getConnection().commit();
+					} catch (final SQLException e) {
+						e.printStackTrace();
+					}
+					zc.setBusy(false);
+					this.readLock.notify();
+					break;
+				}
+			}
+		}
+	}
+
+
+	private void returnWrite(final ZConnection zConnection) {
+		synchronized (this.writeLock) {
+
+			for (final ZConnection zc : this.writeVector) {
+				if (zc.getConnection() == zConnection.getConnection()) {
+					try {
+						zConnection.getConnection().commit();
+					} catch (final SQLException e) {
+						e.printStackTrace();
+					}
+					zc.setBusy(false);
+					this.writeLock.notify();
+					break;
+				}
 			}
 		}
 	}
