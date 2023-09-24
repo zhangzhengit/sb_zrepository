@@ -9,6 +9,9 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,6 +19,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.PrimitiveIterator.OfDouble;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -24,6 +28,7 @@ import java.util.StringJoiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.io.LittleEndianDataInputStream;
 import com.vo.anno.ZEntity;
 import com.vo.conn.Mode;
 import com.vo.conn.ZCPool;
@@ -36,6 +41,7 @@ import com.vo.transaction.ZTransactionAspect;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 
 /**
@@ -722,7 +728,9 @@ public class SU {
 					final String javaFieldName = ZFieldConverter.toJavaField(columnName);
 					final Field field = cls.getDeclaredField(javaFieldName);
 					field.setAccessible(true);
-					field.set(t, columValue);
+
+					final Object handValue = handValue(t, columValue, field);
+					field.set(t, handValue);
 				}
 
 				r.add(t);
@@ -744,6 +752,27 @@ public class SU {
 		}
 
 		return null;
+	}
+
+	// FIXME 2023年9月24日 下午3:41:35 zhanghen: 继续写，测试各种db和java的日期类型转换
+	private static <T> Object handValue(final T t, final Object columValue, final Field field) {
+		if (columValue instanceof LocalDateTime) {
+			final Date date = Date.from(((LocalDateTime) columValue).atZone(ZoneId.systemDefault()).toInstant());
+			final ZDateFormat zdf = field.getAnnotation(ZDateFormat.class);
+			if (zdf != null) {
+				final String format = zdf.format().getFormat();
+				final SimpleDateFormat sss = new SimpleDateFormat(format);
+
+				final String format2 = sss.format(date);
+
+				final DateTime parse = DateUtil.parse(format2, format);
+				return parse;
+			}
+
+			return date;
+		}
+
+		return columValue;
 	}
 
 	public static <T> List<T> findByIdIn(final Mode mode, final List<Object> idList, final Class<T> cls, final String sql) {
@@ -862,7 +891,10 @@ public class SU {
 			final String javaFieldName = ZFieldConverter.toJavaField(columnName);
 			final Field field = cls.getDeclaredField(javaFieldName);
 			field.setAccessible(true);
-			field.set(t, columValue);
+//			field.set(t, columValue);
+
+			final Object handValue = handValue(t, columValue, field);
+			field.set(t, handValue);
 		}
 		return t;
 	}

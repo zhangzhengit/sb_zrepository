@@ -1,4 +1,4 @@
-package com.vo.test;
+package com.vo;
 
 import java.util.List;
 
@@ -12,8 +12,8 @@ import com.vo.ZRepository;
  * @date 2023年8月20日
  *
  */
-public interface Number2ZRepository
-extends ZRepository<Number2Entity, Integer>
+public interface NumberZRepository
+extends ZRepository<NumberEntity, Integer>
 {
 
 	List<NumberEntity> findByAgeLessThanEquals(Integer id);

@@ -1,4 +1,6 @@
-package com.vo.test;
+package com.vo;
+
+import java.util.Date;
 
 import com.vo.ZID;
 import com.vo.anno.ZEntity;
@@ -17,8 +19,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ZEntity(tableName = "number2")
-public class Number2Entity {
+@ZEntity(tableName = "number")
+public class NumberEntity {
 
 	@ZID
 	private Integer id;
@@ -36,5 +38,8 @@ public class Number2Entity {
 	private Integer age;
 
 	private Integer status;
+
+//	@ZDateFormat(format = ZDateFormatEnum.YYYY_MM_DD_HH_MM_SS)
+	private Date createTime;
 
 }

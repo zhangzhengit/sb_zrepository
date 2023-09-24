@@ -1,4 +1,4 @@
-package com.vo.test;
+package com.vo;
 
 import com.vo.ZID;
 import com.vo.anno.ZEntity;
@@ -17,8 +17,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ZEntity(tableName = "number")
-public class NumberEntity {
+@ZEntity(tableName = "number2")
+public class Number2Entity {
 
 	@ZID
 	private Integer id;
