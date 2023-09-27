@@ -39,7 +39,7 @@ class SbZrepositoryTestApplicationTests {
 	@Autowired
 	NumberZRepository nnnnnnnnn;
 
-	final ZE ze = ZES.newZE(8, "ZR-TEST-THREAD-");
+	final ZE ze = ZES.newZE(40, "ZR-TEST-THREAD-");
 //	final ZE ze = ZES.newZE(Runtime.getRuntime().availableProcessors() * 10, "ZR-TEST-THREAD-");
 
 	@Test

@@ -21,6 +21,7 @@ import groovy.lang.GrabConfig;
  */
 // FIXME 2023年6月15日 下午7:42:24 zhanghen: 参照 https://www.fcors.com/archives/1719 全完成
 public class MethodRegex {
+	// FIXME 2023年9月27日 下午4:09:13 zhanghen: TODO 支持findMax/MinXXByXX这种形式
 	public static final String GROUP_findByXXOrderByXXLimit = "findBy(.*)OrderBy(.*)Limit";
 	public static final String GROUP_findByXXOrderByXXDescLimit = "findBy(.*)OrderBy(.*)DescLimit";
 	public static final String GROUP_count = "count";
