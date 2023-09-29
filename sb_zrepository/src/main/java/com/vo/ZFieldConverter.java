@@ -32,19 +32,22 @@ public class ZFieldConverter {
 	public static String toDbField(final String javaFieldName) {
 		final char[] charArray = javaFieldName.toCharArray();
 
-		String n = javaFieldName;
+//		String n = javaFieldName;
+		final StringBuilder n = new StringBuilder(javaFieldName);
 		for (int i = 0; i < charArray.length; i++) {
 			final char c = charArray[i];
 			if (daxie.contains(c)) {
 				if (i == 0) {
-					n = n.replace(String.valueOf(c), String.valueOf(c).toLowerCase());
+					n.replace(i, i + 1, String.valueOf(c).toLowerCase());
+//					n = n.replace(String.valueOf(c), String.valueOf(c).toLowerCase());
 				} else {
-					n = n.replace(String.valueOf(c), "_" + String.valueOf(c).toLowerCase());
+					n.replace(i, i + 1, "_" + String.valueOf(c).toLowerCase());
+//					n = n.replace(String.valueOf(c), "_" + String.valueOf(c).toLowerCase());
 				}
 			}
 		}
 
-		return n;
+		return n.toString();
 	}
 
 	static HashSet<Character> daxie = Sets.newHashSet('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
