@@ -19,7 +19,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.PrimitiveIterator.OfDouble;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -28,7 +27,6 @@ import java.util.StringJoiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.io.LittleEndianDataInputStream;
 import com.vo.anno.ZEntity;
 import com.vo.conn.Mode;
 import com.vo.conn.ZCPool;
@@ -113,7 +111,6 @@ public class SU {
 				e.printStackTrace();
 			}
 		} finally {
-//			close(ps, rs);
 			ZCPool.getInstance().returnZConnectionAndCommit(zc);
 		}
 
@@ -462,7 +459,8 @@ public class SU {
 		return false;
 	}
 
-	public static  <T> List<Object> saveAll(final Mode mode, final Class<T> cls, final String sqlParam, final List<T> tList) {
+	public static <T> List<Object> saveAll(final Mode mode, final Class<T> cls, final String sqlParam,
+			final List<T> tList) {
 
 		if (CollUtil.isEmpty(tList)) {
 			return Collections.emptyList();
@@ -573,7 +571,7 @@ public class SU {
 			close(rs, ps);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
 
 	private static <T> String generateSaveAllSQL(final Class<T> cls, final String sql) {
@@ -751,7 +749,7 @@ public class SU {
 			close(rs, ps);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
 
 	// FIXME 2023年9月24日 下午3:41:35 zhanghen: 继续写，测试各种db和java的日期类型转换
@@ -826,7 +824,7 @@ public class SU {
 			close(rs, ps);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
 
 	private  static <T> T findById(final Mode mode, final Object id, final Class<T> cls, final String sql,final ZConnection zc) {
@@ -946,16 +944,11 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
 			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, ps);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
 
 	public static <T> List<T> findByXX(final Mode mode, final Class<T> cls, final String sql, final Object fieldValue) {
@@ -998,15 +991,10 @@ public class SU {
 			e.printStackTrace();
 		} finally {
 			INSTANCE.returnZConnectionAndCommit(zc);
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
 			close(rs, ps);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
 
 	public static <T> List<T> findByXXIn(final Mode mode, final Class<T> cls, final String sql, final Object... fieldArray) {
@@ -1073,16 +1061,11 @@ public class SU {
 				e1.printStackTrace();
 			}
 		} finally {
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
 			INSTANCE.returnZConnectionAndCommit(zc);
 			close(rs, statement);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
 
 	public static <T> List<T> findByIdLessThan(final Mode mode, final Class<T> cls, final String sql, final Object field) {
@@ -1126,15 +1109,9 @@ public class SU {
 			}
 		} finally {
 			INSTANCE.returnZConnectionAndCommit(zc);
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
 			close(rs, ps);
 		}
-
-		return null;
+		return Collections.emptyList();
 	}
 
 	public static <T> List<T> findByXXXEndingWith(final Mode mode, final Class<T> cls, final String sql, final Object field) {
@@ -1177,17 +1154,13 @@ public class SU {
 			}
 		} finally {
 			INSTANCE.returnZConnectionAndCommit(zc);
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e1) {
-//				e1.printStackTrace();
-//			}
 
 			close(rs, ps);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
+
 	public static <T> List<T> findByXXXStartingWith(final Mode mode, final Class<T> cls, final String sql, final Object field) {
 
 		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
@@ -1228,16 +1201,11 @@ public class SU {
 			}
 		} finally {
 			INSTANCE.returnZConnectionAndCommit(zc);
-//			try {
-//				connection.commit();
-//			} catch (final SQLException e) {
-//				e.printStackTrace();
-//			}
 			close(rs, ps);
 		}
-
-		return null;
+		return Collections.emptyList();
 	}
+
 	public static <T> List<T> findByXXLike(final Mode mode, final Class<T> cls, final String sql, final Object field) {
 
 		final ZConnection zc = getZCAndSetAutoCommitFALSE(mode);
@@ -1281,7 +1249,7 @@ public class SU {
 			close(rs, ps);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
 
 	public static <T> List<T> findByXXIsNull(final Mode mode, final Class<T> cls, final String sql) {
@@ -1325,7 +1293,7 @@ public class SU {
 			close(rs, ps);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
 
 	public static <T> Long count(final Mode mode, final Class<T> cls, final String sql,final ZConnection zc) {
@@ -1366,7 +1334,7 @@ public class SU {
 			close(rs, ps);
 		}
 
-		return null;
+		return 0L;
 	}
 
 	public static <T> Long count(final Mode mode, final Class<T> cls, final String sql) {
@@ -1411,7 +1379,7 @@ public class SU {
 			close(rs, ps);
 		}
 
-		return null;
+		return 0L;
 	}
 
 	public static <T> List<T> findByXXOrderByXXLimit(final Mode mode, final Class<T> cls, final String sql, final Object... field) {
@@ -1459,7 +1427,7 @@ public class SU {
 			close(rs, ps);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
 
 	private static void close(final AutoCloseable... autoCloseables) {
