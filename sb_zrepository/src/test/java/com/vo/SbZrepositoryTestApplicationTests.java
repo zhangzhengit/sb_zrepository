@@ -42,6 +42,38 @@ class SbZrepositoryTestApplicationTests {
 	final ZE ze = ZES.newZE(40, "ZR-TEST-THREAD-");
 //	final ZE ze = ZES.newZE(Runtime.getRuntime().availableProcessors() * 10, "ZR-TEST-THREAD-");
 
+
+	@Test
+	void ZFieldConverterTest1() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.update_N3()");
+
+
+		final String[] na = {
+				"targetNodeId",
+				"createTime",
+				"orderStatus",
+				"nickName",
+				"name",
+				"id",
+				"aaaBBc1DV23X",
+				"vLKJKLMCLVMJ23LKVJljLKJ23923okjLKJLKJLKwepwlkfjk222KKk",
+				"abcdLjlskjdflLKJLNLKJOIlknLmlxmcllikwlkjLKJLSDXKjNVLKJs"
+
+		};
+		for (final String name : na) {
+			final String dbField = ZFieldConverter.toDbField(name);
+			final String javaField = ZFieldConverter.toJavaField(dbField);
+
+			assertThat(name.equals(javaField));
+
+		}
+	}
+
+	public static void gJavaFieldName() {
+
+	}
+
 	@Test
 	void update_N3() {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
