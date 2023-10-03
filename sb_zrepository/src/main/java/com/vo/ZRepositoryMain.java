@@ -468,7 +468,12 @@ public class ZRepositoryMain {
 //		System.out.println("mn2 = " + mn2);
 		final String[] fieldNameArray = mn2.split("-");
 //		System.out.println("fieldNameArray = " + Arrays.toString(fieldNameArray));
-		final List<String> fieldNameList = Lists.newArrayList(fieldNameArray).stream().filter(x -> StrUtil.isNotBlank(x)).collect(Collectors.toList());
+		final List<String> fieldNameList = Lists.newArrayList(fieldNameArray)
+				.stream()
+				.filter(x -> StrUtil.isNotBlank(x))
+				.map(x -> x.length() == 1 ? x.toLowerCase() : Character.toLowerCase(x.charAt(0)) + x.substring(1))
+				.collect(Collectors.toList());
+
 
 		for (final String fn : fieldNameList) {
 			final Optional<String> findAny = fnLIst.stream().filter(f1 -> f1.equalsIgnoreCase(fn)).findAny();

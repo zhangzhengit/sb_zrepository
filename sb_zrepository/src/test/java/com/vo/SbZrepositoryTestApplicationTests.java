@@ -50,6 +50,7 @@ class SbZrepositoryTestApplicationTests {
 
 
 		final String[] na = {
+				"jobId",
 				"targetNodeId",
 				"createTime",
 				"orderStatus",
