@@ -16,6 +16,7 @@ public interface NumberZRepository
 extends ZRepository<NumberEntity, Integer>
 {
 
+	List<NumberEntity> findByNameIn(List<String> list);
 	List<NumberEntity> findByAgeLessThanEquals(Integer id);
 
 	// FIXME 2023年8月27日 下午1:46:07 zhanghen: TODO

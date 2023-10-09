@@ -44,6 +44,32 @@ class SbZrepositoryTestApplicationTests {
 
 
 	@Test
+	void findByNameIn1() {
+		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
+				+ "SbZrepositoryTestApplicationTests.findByNameIn1()");
+
+		final int n = 100;
+
+		final HashSet<String> set = Sets.newHashSet();
+		for(int i = 1;i<=n;i++) {
+			final String name = UUID.randomUUID().toString();
+			final NumberEntity entity = new NumberEntity();
+			entity.setName(name);
+			final NumberEntity save = this.nnnnnnnnn.save(entity);
+			set.add(save.getName());
+		}
+
+		final List<NumberEntity> findByNemeIn = this.nnnnnnnnn.findByNameIn(Lists.newArrayList(set));
+
+		assertThat(findByNemeIn.size() == n);
+
+		for (final NumberEntity numberEntity : findByNemeIn) {
+			assertThat(set.contains(numberEntity.getName()));
+		}
+
+	}
+
+	@Test
 	void ZFieldConverterTest1() {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "SbZrepositoryTestApplicationTests.update_N3()");
