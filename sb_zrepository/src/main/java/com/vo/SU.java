@@ -827,7 +827,11 @@ public class SU {
 		return Collections.emptyList();
 	}
 
-	private  static <T> T findById(final Mode mode, final Object id, final Class<T> cls, final String sql,final ZConnection zc) {
+	private static <T> T findById(final Mode mode, final Object id, final Class<T> cls, final String sql,
+			final ZConnection zc) {
+		if (Objects.isNull(id)) {
+			return null;
+		}
 
 		final Connection connection = zc.getConnection();
 
