@@ -29,6 +29,7 @@ import cn.hutool.core.collection.CollUtil;
  * @date 2023年6月16日
  *
  */
+// FIXME 2023年10月15日 下午7:16:49 zhanghen: TODO 区分mysql、postgresql等等，现在默认实现是mysql
 @Component
 public class ZRepositoryStarter implements InstantiationAwareBeanPostProcessor {
 
