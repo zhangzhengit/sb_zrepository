@@ -44,6 +44,12 @@ public class ZCPool {
 		job.start();
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			try {
+				Thread.sleep(500);
+			} catch (final InterruptedException e) {
+				e.printStackTrace();
+			}
+
 			LOG.info("JVM钩子执行，开始关闭连接池");
 			this.shutdown();
 			LOG.info("JVM钩子已成功关闭连接池");
