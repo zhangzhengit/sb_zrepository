@@ -82,7 +82,9 @@ public class SqlPattern {
 		SQL_KEYWORD.add("All");
 		SQL_KEYWORD.add("Less");
 		SQL_KEYWORD.add("Than");
-		SQL_KEYWORD.add("Is");
+		// FIXME 2023年11月6日 上午8:36:24 zhanghen: 暂时Is改为is
+		// 防止类似findByIsDelete方法被误判。修改逻辑：IsDelete之类要作为一个字段名称，而不是去掉Is把delete作为名称
+		SQL_KEYWORD.add("is");
 		SQL_KEYWORD.add("Null");
 		SQL_KEYWORD.add("counting");
 		SQL_KEYWORD.add("count");
