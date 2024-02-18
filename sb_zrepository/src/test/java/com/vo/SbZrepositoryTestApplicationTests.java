@@ -74,7 +74,6 @@ class SbZrepositoryTestApplicationTests {
 		System.out.println(java.time.LocalDateTime.now() + "\t" + Thread.currentThread().getName() + "\t"
 				+ "SbZrepositoryTestApplicationTests.update_N3()");
 
-
 		final String[] na = {
 				"jobId",
 				"targetNodeId",
@@ -131,7 +130,7 @@ class SbZrepositoryTestApplicationTests {
 		while(w.get() < k) {
 
 		}
-		System.out.println("k * n = " + (k * n));
+		System.out.println("k * n = " + k * n);
 		System.out.println("idSets.size = " + idSet.size());
 		assertThat(idSet.size() == k * n);
 		System.out.println("udpate 开始");
@@ -469,7 +468,7 @@ class SbZrepositoryTestApplicationTests {
 		System.out.println("OK");
 		assertThat(w.get() == n);
 
-		final List<Integer> idl = ssss.stream().map(e -> e.getId()).collect(Collectors.toList());
+		final List<Integer> idl = ssss.stream().map(NumberEntity::getId).collect(Collectors.toList());
 		assertThat(idl.size() == n);
 
 	}
@@ -687,7 +686,7 @@ class SbZrepositoryTestApplicationTests {
 
 
 
-		final List<Integer> idF = sl.stream().map(e -> e.getId()).collect(Collectors.toList());
+		final List<Integer> idF = sl.stream().map(NumberEntity::getId).collect(Collectors.toList());
 		final List<NumberEntity> findByIdIn = this.nnnnnnnnn.findByIdIn(idF);
 		assertThat(findByIdIn.size() == n);
 
